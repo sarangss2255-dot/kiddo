@@ -5,10 +5,11 @@ import { getAuth, GoogleAuthProvider, initializeAuth } from 'firebase/auth';
 import { getReactNativePersistence } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import firebaseConfig from '../firebase-applet-config.json';
+import firebaseConfig from '../../firebase-applet-config.json';
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+const firestoreDatabaseId = firebaseConfig.firestoreDatabaseId?.trim();
 
 const createAuth = () => {
   if (Platform.OS === 'web') {
@@ -21,7 +22,7 @@ const createAuth = () => {
 };
 
 export const auth = createAuth();
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = firestoreDatabaseId ? getFirestore(app, firestoreDatabaseId) : getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 
 // Error Handling Types
@@ -82,7 +83,12 @@ async function testConnection() {
     await getDocFromServer(doc(db, 'test', 'connection'));
   } catch (error) {
     if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration. The client is offline.");
+      console.error('Please check your Firebase configuration. The client is offline.');
+    } else if (
+      error instanceof Error &&
+      (firebaseConfig.appId.includes('REPLACE_WITH_') || firebaseConfig.apiKey.includes('REPLACE_WITH_'))
+    ) {
+      console.error('Firebase web config is still using placeholders. Add the web app values from the kiddo-bf68d Firebase project.');
     }
   }
 }

@@ -14,6 +14,7 @@ export default defineConfig(({mode}) => {
       alias: {
         '@': path.resolve(__dirname, '.'),
         'react-native': 'react-native-web',
+        'react-is': path.resolve(__dirname, 'src/shims/react-is.ts'),
       },
     },
     server: {

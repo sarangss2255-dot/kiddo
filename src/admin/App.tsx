@@ -7,14 +7,13 @@ import { UsersPage } from './pages/UsersPage';
 import { TasksPage } from './pages/TasksPage';
 import { RewardsPage } from './pages/RewardsPage';
 import { SettingsPage } from './pages/SettingsPage';
-import { HomePage } from './pages/HomePage';
 import { useAuth } from './context/AuthContext';
 
 function ProtectedApp() {
   const { token } = useAuth();
 
   if (!token) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/admin/login" replace />;
   }
 
   return (
@@ -34,7 +33,6 @@ function ProtectedApp() {
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/admin" element={<ProtectedApp />} />
       <Route path="/admin/leaderboard" element={<ProtectedApp />} />
@@ -42,6 +40,7 @@ export default function App() {
       <Route path="/admin/tasks" element={<ProtectedApp />} />
       <Route path="/admin/rewards" element={<ProtectedApp />} />
       <Route path="/admin/settings" element={<ProtectedApp />} />
+      <Route path="*" element={<Navigate to="/admin/login" replace />} />
     </Routes>
   );
 }

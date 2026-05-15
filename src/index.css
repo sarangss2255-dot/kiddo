@@ -14,6 +14,7 @@
 @layer base {
   body {
     @apply font-sans antialiased text-slate-900 bg-slate-50;
+    margin: 0;
   }
 }
 

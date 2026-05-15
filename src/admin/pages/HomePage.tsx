@@ -35,7 +35,7 @@ export function HomePage() {
               {item.label}
             </a>
           ))}
-          <Link to="/login" className="nav-admin-link">
+          <Link to="/admin/login" className="nav-admin-link">
             Admin Login
           </Link>
         </nav>
@@ -51,7 +51,7 @@ export function HomePage() {
               <a href="#screens" className="hero-primary">
                 Explore the app
               </a>
-              <Link to="/login" className="hero-secondary">
+              <Link to="/admin/login" className="hero-secondary">
                 Admin access <ArrowRight size={16} />
               </Link>
             </div>
@@ -240,7 +240,7 @@ export function HomePage() {
             </p>
           </div>
 
-          <Link to="/login" className="callout-button">
+          <Link to="/admin/login" className="callout-button">
             Open admin login <ArrowRight size={16} />
           </Link>
         </section>
