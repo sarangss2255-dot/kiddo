@@ -19,12 +19,12 @@ function ProtectedApp() {
   return (
     <DashboardLayout>
       <Routes>
-        <Route path="/admin" element={<DashboardPage />} />
-        <Route path="/admin/leaderboard" element={<LeaderboardPage />} />
-        <Route path="/admin/users" element={<UsersPage />} />
-        <Route path="/admin/tasks" element={<TasksPage />} />
-        <Route path="/admin/rewards" element={<RewardsPage />} />
-        <Route path="/admin/settings" element={<SettingsPage />} />
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="/leaderboard" element={<LeaderboardPage />} />
+        <Route path="/users" element={<UsersPage />} />
+        <Route path="/tasks" element={<TasksPage />} />
+        <Route path="/rewards" element={<RewardsPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
       </Routes>
     </DashboardLayout>
   );
@@ -34,13 +34,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/admin" element={<ProtectedApp />} />
-      <Route path="/admin/leaderboard" element={<ProtectedApp />} />
-      <Route path="/admin/users" element={<ProtectedApp />} />
-      <Route path="/admin/tasks" element={<ProtectedApp />} />
-      <Route path="/admin/rewards" element={<ProtectedApp />} />
-      <Route path="/admin/settings" element={<ProtectedApp />} />
-      <Route path="*" element={<Navigate to="/admin/login" replace />} />
+      <Route path="/*" element={<ProtectedApp />} />
     </Routes>
   );
 }

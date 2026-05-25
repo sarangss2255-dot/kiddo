@@ -18,6 +18,7 @@ function AdminRoot() {
 }
 
 export default function App() {
+  console.log('App component rendered');
   return (
     <BrowserRouter>
       <Routes>

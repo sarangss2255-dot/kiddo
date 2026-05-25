@@ -23,10 +23,10 @@ export default function ParentDashboard() {
     try {
       const [tasksData, kidsData] = await Promise.all([
         api.get('/tasks'),
-        api.get('/kids')
+        api.get('/users/family')
       ]);
       setTasks(tasksData.map((t: any) => ({ ...t, id: t._id })));
-      setKids(kidsData.map((k: any) => ({ ...k, uid: k.firebaseUid })));
+      setKids(kidsData.map((k: any) => ({ ...k, uid: k._id })));
     } catch (error) {
       console.error('Fetch error:', error);
     }
@@ -85,7 +85,7 @@ export default function ParentDashboard() {
 
   const approveTask = async (task: Task) => {
     try {
-      await api.post(`/tasks/${task.id}/approve`, {});
+      await api.patch(`/tasks/${task.id}`, { status: 'approved' });
       fetchData();
     } catch (error) {
       console.error(error);

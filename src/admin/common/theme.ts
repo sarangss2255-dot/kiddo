@@ -1,30 +1,29 @@
 export const theme = {
   fonts: {
-    base: '"Trebuchet MS", "Avenir Next", sans-serif',
+    base: '"Inter", ui-sans-serif, system-ui, sans-serif',
+    kids: '"Fredoka", cursive',
   },
   colors: {
-    text: '#10243b',
-    textMuted: '#6e8094',
-    textSoft: '#4b5563',
-    brand: '#9a3412',
-    primaryDark: '#0f62d6',
-    surface: 'rgba(255, 255, 255, 0.92)',
-    surfaceStrong: 'rgba(255, 255, 255, 0.78)',
-    border: 'rgba(16, 36, 59, 0.08)',
-    dark: '#0e1f33',
-    darkAlt: '#0f172a',
-    white: '#ffffff',
+    text: '#1C2340',
+    textMuted: '#5F6787',
+    textSoft: '#9EA4BC',
+    brand: '#FF7A59',
+    primaryDark: '#1C2340',
+    surface: '#FFFFFF',
+    surfaceStrong: '#FCFBF8',
+    border: 'rgba(28, 35, 64, 0.05)',
+    dark: '#1C2340',
+    darkAlt: '#0F172A',
+    white: '#FFFFFF',
   },
   gradients: {
-    appBackground:
-      'radial-gradient(circle at top left, rgba(255, 195, 0, 0.18), transparent 24%), radial-gradient(circle at top right, rgba(23, 130, 255, 0.16), transparent 28%), linear-gradient(180deg, #fffaf0 0%, #eff7ff 48%, #eefbf2 100%)',
-    loginBackground:
-      'radial-gradient(circle at top left, rgba(40, 134, 255, 0.18), transparent 30%), radial-gradient(circle at bottom right, rgba(22, 163, 74, 0.15), transparent 35%), #f7fbff',
-    heroPrimary: 'linear-gradient(135deg, #ef6c00, #f59e0b)',
-    adminCallout: 'linear-gradient(135deg, #10243b, #1d4e89)',
+    appBackground: '#FCFBF8',
+    loginBackground: 'radial-gradient(circle at top left, rgba(255, 122, 89, 0.1), transparent 30%), #FCFBF8',
+    heroPrimary: 'linear-gradient(135deg, #1C2340, #2C365E)',
+    adminCallout: 'linear-gradient(135deg, #FF7A59, #FF9B82)',
   },
   shadows: {
-    card: '0 20px 60px rgba(16, 36, 59, 0.08)',
+    card: '0 10px 30px rgba(28, 35, 64, 0.04)',
   },
 } as const;
 
@@ -32,6 +31,7 @@ export function applyTheme() {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
   root.style.setProperty('--font-base', theme.fonts.base);
+  root.style.setProperty('--font-kids', theme.fonts.kids);
   root.style.setProperty('--color-text', theme.colors.text);
   root.style.setProperty('--color-text-muted', theme.colors.textMuted);
   root.style.setProperty('--color-text-soft', theme.colors.textSoft);

@@ -27,11 +27,11 @@ export default function Onboarding() {
 
     setLoading(true);
     try {
-      await api.post('/register', {
-        firebaseUid: auth.currentUser.uid,
+      await api.post('/auth/parent/register', {
+        idToken: await auth.currentUser.getIdToken(),
         email: auth.currentUser.email,
-        displayName: auth.currentUser.displayName || 'New User',
-        role,
+        firstName: auth.currentUser.displayName?.split(' ')[0] || 'Parent',
+        lastName: auth.currentUser.displayName?.split(' ').slice(1).join(' ') || '',
         familyName: familyName || 'Our Awesome Family',
       });
 

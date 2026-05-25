@@ -50,14 +50,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshProfile = async () => {
     if (!auth.currentUser) return;
     try {
-      const data = await api.get('/profile');
+      const data = await api.get('/auth/me');
       if (data) {
         const newProfile = {
-          uid: data.firebaseUid,
+          uid: data._id,
           email: data.email,
-          displayName: data.displayName,
+          displayName: data.firstName || data.displayName,
           role: data.role,
-          familyId: data.familyId,
+          familyId: data.familyId ? String(data.familyId) : undefined,
           points: data.points,
           avatar: data.avatar,
           chessWins: data.chessWins,

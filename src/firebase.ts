@@ -1,27 +1,13 @@
-import { Platform } from 'react-native';
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, initializeAuth } from 'firebase/auth';
-// @ts-expect-error - getReactNativePersistence is available at runtime in RN environment
-import { getReactNativePersistence } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const firestoreDatabaseId = firebaseConfig.firestoreDatabaseId?.trim();
 
-const createAuth = () => {
-  if (Platform.OS === 'web') {
-    return getAuth(app);
-  }
-
-  return initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage)
-  });
-};
-
-export const auth = createAuth();
+export const auth = getAuth(app);
 export const db = firestoreDatabaseId ? getFirestore(app, firestoreDatabaseId) : getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 

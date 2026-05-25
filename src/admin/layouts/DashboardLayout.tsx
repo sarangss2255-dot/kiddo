@@ -1,5 +1,6 @@
 import { LogOut, Shield, Download } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'motion/react';
 import type { ReactNode } from 'react';
 import { brandContent } from '../common/content';
 import { adminNavItems } from '../common/navigation';
@@ -45,12 +46,26 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
       <main className="content">
         <header className="topbar">
-          <div>
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
             <p className="eyebrow">System Administration</p>
             <h1>Welcome back, {user?.firstName}</h1>
-          </div>
+          </motion.div>
         </header>
-        {children}
+        
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={pathname}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
+            {children}
+          </motion.div>
+        </AnimatePresence>
       </main>
     </div>
   );

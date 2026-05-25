@@ -20,8 +20,9 @@ export function LoginPage() {
     try {
       await login(identifier, password);
       navigate('/admin');
-    } catch {
-      setError('Unable to sign in. Check credentials or backend availability.');
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || 'Unable to sign in. Check credentials or backend availability.');
     } finally {
       setLoading(false);
     }

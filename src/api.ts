@@ -1,7 +1,8 @@
 import { auth } from './firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const PROD_API_BASE_URL = 'https://kiddo-backend-l4qf.onrender.com';
+const PROD_API_BASE_URL = 'https://kiddo-backend-l4qf.onrender.com/api/v1';
+const LOCAL_API_BASE_URL = 'http://localhost:4000/api/v1';
 const TOKEN_KEY = 'kiddo_token';
 
 const getBaseUrl = () => {
@@ -10,7 +11,12 @@ const getBaseUrl = () => {
     return configured.replace(/\/$/, '');
   }
 
-  return window.location.hostname === 'localhost' ? '' : PROD_API_BASE_URL;
+  // In dev/localhost, use local backend; otherwise production
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return LOCAL_API_BASE_URL;
+  }
+
+  return PROD_API_BASE_URL;
 };
 
 const getHeaders = async () => {
@@ -43,13 +49,13 @@ export const api = {
   },
   get: async (endpoint: string) => {
     const headers = await getHeaders();
-    const response = await fetch(`${getBaseUrl()}/api/data${endpoint}`, { headers });
+    const response = await fetch(`${getBaseUrl()}${endpoint}`, { headers });
     if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
     return response.json();
   },
   post: async (endpoint: string, data: any) => {
     const headers = await getHeaders();
-    const response = await fetch(`${getBaseUrl()}/api/data${endpoint}`, {
+    const response = await fetch(`${getBaseUrl()}${endpoint}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(data),
@@ -59,7 +65,7 @@ export const api = {
   },
   patch: async (endpoint: string, data: any) => {
     const headers = await getHeaders();
-    const response = await fetch(`${getBaseUrl()}/api/data${endpoint}`, {
+    const response = await fetch(`${getBaseUrl()}${endpoint}`, {
       method: 'PATCH',
       headers,
       body: JSON.stringify(data),

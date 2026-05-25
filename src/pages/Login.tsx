@@ -1,20 +1,34 @@
-import React from 'react';
-import { Alert, Platform, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Rocket, ShieldCheck, Heart, LogIn } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View, Alert, TextInput, Platform } from 'react-native';
+import { Download, Rocket, ShieldCheck, Heart, LogIn } from 'lucide-react-native';
 import { auth, googleProvider } from '../firebase';
-import { signInWithPopup } from 'firebase/auth';
+import { signInWithPopup, signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function Login() {
-  const handleLogin = async () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleGoogleLogin = async () => {
     try {
       if (Platform.OS !== 'web') {
         Alert.alert('Sign-in unavailable', 'Google popup sign-in is currently supported only on web in this build.');
         return;
       }
-
       await signInWithPopup(auth, googleProvider);
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const handleEmailLogin = async () => {
+    try {
+      setLoading(true);
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (e) {
+      Alert.alert('Login failed', e?.message || e);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -26,26 +40,51 @@ export default function Login() {
         </View>
         <Text style={styles.title}>KidTasker</Text>
         <Text style={styles.subtitle}>Make chores fun and earn awesome rewards!</Text>
-
         <View style={styles.featureRow}>
           <View style={styles.featureItem}>
-             <View style={[styles.miniIcon, {backgroundColor: '#dbeafe'}]}><ShieldCheck color="#2563eb" size={20} /></View>
-             <Text style={styles.featureLabel}>Secure</Text>
+            <View style={[styles.miniIcon, { backgroundColor: '#dbeafe' }]}>
+              <ShieldCheck color="#2563eb" size={20} />
+            </View>
+            <Text style={styles.featureLabel}>Secure</Text>
           </View>
           <View style={styles.featureItem}>
-             <View style={[styles.miniIcon, {backgroundColor: '#fce7f3'}]}><Heart color="#db2777" size={20} /></View>
-             <Text style={styles.featureLabel}>Family</Text>
+            <View style={[styles.miniIcon, { backgroundColor: '#fce7f3' }]}>
+              <Heart color="#db2777" size={20} />
+            </View>
+            <Text style={styles.featureLabel}>Family</Text>
           </View>
           <View style={styles.featureItem}>
-             <View style={[styles.miniIcon, {backgroundColor: '#dcfce7'}]}><LogIn color="#16a34a" size={20} /></View>
-             <Text style={styles.featureLabel}>Easy</Text>
+            <View style={[styles.miniIcon, { backgroundColor: '#dcfce7' }]}>
+              <LogIn color="#16a34a" size={20} />
+            </View>
+            <Text style={styles.featureLabel}>Easy</Text>
           </View>
         </View>
-
-        <TouchableOpacity onPress={handleLogin} style={styles.googleBtn}>
-           <Text style={styles.googleBtnText}>Sign in with Google</Text>
+        <View style={styles.inputGroup}>
+          <TextInput
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Email"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            style={styles.input}
+            editable={!loading}
+          />
+          <TextInput
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Password"
+            secureTextEntry
+            style={styles.input}
+            editable={!loading}
+          />
+          <TouchableOpacity onPress={handleEmailLogin} style={styles.emailBtn} disabled={loading}>
+            <Text style={styles.emailBtnText}>{loading ? 'Logging in…' : 'Sign in with Email'}</Text>
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity onPress={handleGoogleLogin} style={styles.googleBtn} disabled={loading}>
+          <Text style={styles.googleBtnText}>Sign in with Google</Text>
         </TouchableOpacity>
-
         <Text style={styles.disclaimer}>By signing in, you agree to our family-friendly terms.</Text>
       </View>
     </SafeAreaView>
@@ -62,6 +101,10 @@ const styles = StyleSheet.create({
   featureItem: { alignItems: 'center', gap: 8 },
   miniIcon: { width: 44, height: 44, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
   featureLabel: { fontSize: 10, fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase' },
+  inputGroup: { width: '100%', marginBottom: 24, alignItems: 'center' },
+  input: { width: '100%', backgroundColor: '#f1f5f9', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 12 },
+  emailBtn: { backgroundColor: '#6366f1', paddingVertical: 12, borderRadius: 16, alignItems: 'center', width: '100%', marginBottom: 12 },
+  emailBtnText: { color: '#fff', fontSize: 18, fontWeight: '700' },
   googleBtn: { backgroundColor: '#f59e0b', width: '100%', paddingVertical: 20, borderRadius: 24, alignItems: 'center', shadowColor: '#f59e0b', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 4 },
   googleBtnText: { color: '#fff', fontSize: 18, fontWeight: '900' },
   disclaimer: { marginTop: 32, fontSize: 12, color: '#d1d5db', textAlign: 'center' },

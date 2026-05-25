@@ -1,7 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { api, setApiToken } from '../api/client';
-import type { AuthUser, LoginResponse } from '../types/auth';
+import type { AuthUser } from '../types/auth';
+import { auth } from '../../firebase';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -31,18 +33,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       token,
       login: async (identifier: string, password: string) => {
-        const { data } = await api.post<LoginResponse>('/auth/login', {
-          identifier,
-          password,
-          role: 'admin',
-        });
+        // Step 1: Sign in with Firebase Auth
+        const userCredential = await signInWithEmailAndPassword(auth, identifier, password);
+        const firebaseUser = userCredential.user;
+        
+        // Step 2: Retrieve the fresh Firebase ID Token
+        const idToken = await firebaseUser.getIdToken();
 
-        setToken(data.accessToken);
-        setUser(data.user);
-        localStorage.setItem(TOKEN_KEY, data.accessToken);
-        localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+        // Step 3: Authenticate / obtain MongoDB session profile from the backend auth check
+        setApiToken(idToken);
+        const { data: dbUser } = await api.get<any>('/auth/me');
+
+        // Step 4: Verify the user role is admin
+        if (dbUser.role !== 'admin') {
+          await signOut(auth);
+          setApiToken(undefined);
+          throw new Error('Access denied: You are not authorized as an administrator.');
+        }
+
+        const adminUser: AuthUser = {
+          id: dbUser._id,
+          role: dbUser.role,
+          firstName: dbUser.firstName || dbUser.displayName || 'Admin',
+          lastName: dbUser.lastName || '',
+          email: dbUser.email,
+        };
+
+        setToken(idToken);
+        setUser(adminUser);
+        localStorage.setItem(TOKEN_KEY, idToken);
+        localStorage.setItem(USER_KEY, JSON.stringify(adminUser));
       },
       logout: () => {
+        signOut(auth).catch(console.error);
         setToken(null);
         setUser(null);
         localStorage.removeItem(TOKEN_KEY);

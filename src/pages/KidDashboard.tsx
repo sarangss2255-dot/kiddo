@@ -108,7 +108,7 @@ export default function KidDashboard() {
       const mappedTasks = data.map((task: any) => ({ ...task, id: task._id }));
       setTasks(
         mappedTasks.filter(
-          (task: Task) => task.assignedTo === profile?.uid && ['pending', 'completed'].includes(task.status),
+          (task: Task) => task.assignedTo === profile?.uid && ['todo', 'in_progress', 'completed'].includes(task.status),
         ),
       );
     } catch (error) {
