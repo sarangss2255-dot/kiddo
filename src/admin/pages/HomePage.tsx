@@ -114,10 +114,10 @@ export function HomePage() {
                   <span>Admin analytics</span>
                 </div>
                 <div className="dashboard-bars">
-                  <span style={{ height: '40%' }} />
-                  <span style={{ height: '65%' }} />
-                  <span style={{ height: '82%' }} />
-                  <span style={{ height: '58%' }} />
+                  <span className="block h-[40%]" />
+                  <span className="block h-[65%]" />
+                  <span className="block h-[82%]" />
+                  <span className="block h-[58%]" />
                 </div>
               </div>
             </div>
