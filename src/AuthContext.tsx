@@ -90,9 +90,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAuthReady(true);
       
       if (firebaseUser) {
-        const idToken = await firebaseUser.getIdToken();
-        const payload = await api.post('/auth/firebase', { idToken });
-        await api.setToken(payload.accessToken);
+        try {
+          const idToken = await firebaseUser.getIdToken();
+          if (typeof idToken === 'string' && idToken.length > 20) {
+            const payload = await api.post('/auth/firebase', { idToken });
+            await api.setToken(payload.accessToken);
+          } else {
+            console.error('No valid idToken obtained from Firebase:', idToken);
+            await api.setToken(null);
+          }
+        } catch (err) {
+          console.error('Error obtaining Firebase idToken:', err);
+          await api.setToken(null);
+        }
       } else {
         // Clear everything if not authenticated
         setProfile(null);
