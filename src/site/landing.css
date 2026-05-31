@@ -1,0 +1,57 @@
+:root{--orange:#F45B20;--dark:#0A0A0A}
+/* Header */
+.landing-header{height:64px;background:var(--dark);border-bottom:1px solid rgba(255,255,255,0.05);position:sticky;top:0;z-index:40;display:flex;align-items:center}
+.landing-header .brand{margin-left:24px;color:#fff;font-weight:900}
+.landing-header .nav{display:flex;gap:24px;justify-content:center;flex:1}
+.landing-header .nav a{font-size:14px;color:rgba(255,255,255,0.5);text-decoration:none}
+.landing-header .cta{margin-right:24px;background:var(--orange);color:#fff;padding:10px 20px;border-radius:8px;font-weight:600;font-size:14px}
+.landing-header .cta:hover{transform:scale(1.02)}
+
+/* Hero */
+.hero-split{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;padding:84px 24px;min-height:80vh}
+.hero-left .badge{background:rgba(244,91,32,0.1);color:var(--orange);display:inline-block;padding:8px 12px;border-radius:999px;font-weight:800;margin-bottom:18px}
+.hero-left h1{font-size:72px;line-height:0.95}
+.hero-left .underline{background:linear-gradient(90deg,var(--orange),#ff7a59);display:inline-block;height:6px;margin-left:6px;border-radius:6px}
+.hero-left p{color:rgba(255,255,255,0.5);font-size:18px;margin-top:18px}
+.hero-left .primary{background:var(--orange);color:#fff;padding:12px 22px;border-radius:12px;font-weight:800;display:inline-block;margin-top:24px;transition:transform .18s}
+.hero-left .primary:hover{transform:scale(1.03)}
+
+/* 3D phone */
+.phone-3d{perspective:1200px;display:flex;justify-content:center}
+.phone-wrap{transform-style:preserve-3d;transform:rotateY(-18deg) rotateX(8deg) rotateZ(2deg);transition:transform .6s}
+.phone{width:260px;height:520px;background:#fff;border-radius:28px;border:1px solid rgba(0,0,0,0.08);box-shadow:0 30px 80px rgba(0,0,0,0.35);overflow:hidden}
+.floating-badge{position:absolute;padding:10px 14px;background:#111;color:#fff;border-radius:12px;box-shadow:0 18px 40px rgba(0,0,0,0.35);transform-style:preserve-3d}
+.badge-a{left:8%;top:20%;animation:floatA 3.5s ease-in-out infinite}
+.badge-b{right:6%;top:30%;animation:floatB 4.4s ease-in-out infinite}
+.badge-c{left:20%;bottom:14%;animation:floatC 5s ease-in-out infinite}
+@keyframes floatA{0%,100%{transform:translateZ(0) translateY(0)}50%{transform:translateZ(18px) translateY(-10px)}}
+@keyframes floatB{0%,100%{transform:translateZ(0) translateY(0)}50%{transform:translateZ(28px) translateY(-16px)}}
+@keyframes floatC{0%,100%{transform:translateZ(0) translateY(0)}50%{transform:translateZ(22px) translateY(-12px)}}
+
+/* Feature grid */
+.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:48px 24px}
+.tilt-card{background:#1A1A1A;border:1px solid rgba(255,255,255,0.06);padding:22px;border-radius:16px;color:rgba(255,255,255,0.9);transform-style:preserve-3d;transition:transform .28s,box-shadow .28s}
+.tilt-card:hover{transform:translateZ(30px) rotateX(4deg);box-shadow:0 30px 60px rgba(0,0,0,0.5)}
+.icon-box{width:56px;height:56px;border-radius:12px;background:rgba(244,91,32,0.1);display:grid;place-items:center;color:var(--orange);margin-bottom:12px}
+.tilt-card h3{font-size:20px;font-weight:600;margin-bottom:8px}
+.tilt-card p{font-size:14px;color:rgba(255,255,255,0.4)}
+
+/* Screenshot gallery */
+.screenshot-row{display:flex;gap:18px;justify-content:center;align-items:center;padding:48px 24px}
+.screenshot{width:140px;height:300px;border-radius:20px;border:1px solid rgba(0,0,0,0.08);box-shadow:0 25px 60px rgba(0,0,0,0.35);overflow:hidden;transition:transform .28s}
+.screenshot.center{transform:scale(1.05)}
+.screenshot.left2{transform:rotateY(8deg)}
+.screenshot.left1{transform:rotateY(4deg)}
+.screenshot.right1{transform:rotateY(-4deg)}
+.screenshot.right2{transform:rotateY(-8deg)}
+
+/* CTA */
+.visual-cta{position:relative;padding:80px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.visual-cta::before{content:'';position:absolute;width:600px;height:600px;border-radius:999px;background:radial-gradient(circle,rgba(244,91,32,0.1),rgba(244,91,32,0));z-index:0}
+.visual-cta .content{position:relative;z-index:1;text-align:center}
+.icon-large{width:80px;height:80px;border-radius:999px;background:rgba(255,255,255,0.06);display:grid;place-items:center;margin-bottom:18px}
+.visual-cta h2{font-size:60px;margin-bottom:18px}
+.visual-cta .download-row{display:flex;gap:12px;align-items:center}
+.store-btn{padding:10px 18px;border:1px solid rgba(255,255,255,0.12);background:#0f0f0f;color:#fff;border-radius:10px}
+
+@media (max-width: 920px){.hero-split{grid-template-columns:1fr}.feature-grid{grid-template-columns:1fr}.screenshot-row{overflow:auto;padding-bottom:24px}.landing-header .nav{display:none}}

@@ -4,6 +4,9 @@ import { AnimatePresence, motion } from 'motion/react';
 import { ArrowRight, Check, ChevronRight, Lock, Mail, Shield, Users } from 'lucide-react';
 import { Input } from '../../../components/ui/Input';
 import { cn } from '../../../lib/utils';
+import { api } from '../../../api';
+import { auth, googleProvider } from '../../../firebase';
+import { signInWithPopup } from 'firebase/auth';
 
 interface AuthPageProps {
   initialMode?: 'login' | 'signup';
@@ -29,15 +32,76 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
   const [childAge, setChildAge] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState('FOX');
   const [goals, setGoals] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleAuthSubmit = (event: React.FormEvent) => {
+  const finishLogin = async (payload: any) => {
+    await api.setToken(payload.accessToken);
+    localStorage.setItem('kiddo_auth_user', JSON.stringify(payload.user));
+
+    if (payload.user.role === 'admin') {
+      navigate('/admin');
+      return;
+    }
+
+    if (payload.user.role === 'child') {
+      localStorage.setItem('kiddo_user_role', 'child');
+      navigate('/app/child');
+      return;
+    }
+
+    localStorage.setItem('kiddo_user_role', 'parent');
+    navigate('/app/parent');
+  };
+
+  const handleAuthSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!email || !password) return;
     if (mode === 'signup') {
       setStep('onboarding');
       return;
     }
-    setStep('otp');
+
+    setLoading(true);
+    setError('');
+    try {
+      const payload = await api.post('/auth/login', {
+        identifier: email,
+        password,
+        role: undefined,
+      });
+      await finishLogin(payload);
+    } catch (err: any) {
+      setError(err?.message || 'Unable to sign in. Check credentials and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const credential = await signInWithPopup(auth, googleProvider);
+      const idToken = await credential.user.getIdToken();
+      const displayName = credential.user.displayName?.trim() || 'Parent';
+      const [firstName, ...lastNameParts] = displayName.split(' ');
+      const payload = await api.post('/auth/firebase', {
+        idToken,
+        ...(mode === 'signup'
+          ? {
+              firstName,
+              lastName: lastNameParts.join(' '),
+              familyName: `${firstName}'s Family`,
+            }
+          : {}),
+      });
+      await finishLogin(payload);
+    } catch (err: any) {
+      setError(err?.message || 'Google sign-in failed. Check Firebase and backend configuration.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleOtpChange = (index: number, value: string) => {
@@ -193,12 +257,29 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
 
                       <button
                         type="submit"
+                        disabled={loading}
                         className="neo-shadow-black inline-flex w-full items-center justify-center gap-3 border-4 border-black bg-[#ccff00] px-6 py-4 font-label text-sm font-bold text-black transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
                       >
-                        {mode === 'login' ? 'SEND ACCESS CODE' : 'CONTINUE SETUP'}
+                        {loading ? 'CHECKING ACCESS' : mode === 'login' ? 'SIGN IN' : 'CONTINUE SETUP'}
                         <ArrowRight size={16} />
                       </button>
                     </form>
+
+                    <button
+                      type="button"
+                      onClick={handleGoogleLogin}
+                      disabled={loading}
+                      className="neo-shadow-black inline-flex w-full items-center justify-center gap-3 border-4 border-black bg-black px-6 py-4 font-label text-sm font-bold text-white transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none disabled:opacity-60"
+                    >
+                      CONTINUE WITH GOOGLE
+                      <Shield size={16} />
+                    </button>
+
+                    {error ? (
+                      <div className="border-4 border-black bg-red-100 px-4 py-3 font-label text-xs font-bold text-red-900">
+                        {error}
+                      </div>
+                    ) : null}
 
                     <button
                       type="button"

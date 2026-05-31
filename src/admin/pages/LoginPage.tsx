@@ -5,8 +5,8 @@ import { useAuth } from '../context/AuthContext';
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
-  const [identifier, setIdentifier] = useState('admin@kiddo.local');
+  const { login, loginWithGoogle } = useAuth();
+  const [identifier, setIdentifier] = useState('sarangblazicon@gmail.com');
   const [password, setPassword] = useState('admin12345');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -23,6 +23,21 @@ export function LoginPage() {
     } catch (err: any) {
       console.error(err);
       setError(err?.message || 'Unable to sign in. Check credentials or backend availability.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSubmit = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      await loginWithGoogle();
+      navigate('/admin');
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || 'Unable to sign in with Google. Check Firebase or admin role setup.');
     } finally {
       setLoading(false);
     }
@@ -63,6 +78,9 @@ export function LoginPage() {
         {error ? <p className="error-text">{error}</p> : null}
         <button type="submit" disabled={loading}>
           {loading ? 'Signing in...' : 'Sign in'}
+        </button>
+        <button type="button" disabled={loading} onClick={handleGoogleSubmit}>
+          Sign in with Google
         </button>
       </form>
     </div>

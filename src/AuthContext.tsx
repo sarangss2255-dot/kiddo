@@ -3,7 +3,6 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from './firebase';
 import { UserProfile } from './types';
 import { api } from './api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface AuthContextType {
   user: User | null;
@@ -14,6 +13,18 @@ interface AuthContextType {
 }
 
 const PROFILE_KEY = 'kiddo_profile';
+
+const profileStorage = {
+  getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+  setItem: (key: string, value: string) => {
+    localStorage.setItem(key, value);
+    return Promise.resolve();
+  },
+  removeItem: (key: string) => {
+    localStorage.removeItem(key);
+    return Promise.resolve();
+  },
+};
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
@@ -33,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const loadCached = async () => {
       try {
-        const cached = await AsyncStorage.getItem(PROFILE_KEY);
+        const cached = await profileStorage.getItem(PROFILE_KEY);
         if (cached) {
           setProfile(JSON.parse(cached));
           // If we have a cached profile, we can stop showing the main spinner 
@@ -66,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } as UserProfile;
         
         setProfile(newProfile);
-        await AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(newProfile));
+        await profileStorage.setItem(PROFILE_KEY, JSON.stringify(newProfile));
       }
     } catch (error) {
       console.error("Profile sync error:", error);
@@ -79,13 +90,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAuthReady(true);
       
       if (firebaseUser) {
-        // Cache token immediately
-        const token = await firebaseUser.getIdToken();
-        await api.setToken(token);
+        const idToken = await firebaseUser.getIdToken();
+        const payload = await api.post('/auth/firebase', { idToken });
+        await api.setToken(payload.accessToken);
       } else {
         // Clear everything if not authenticated
         setProfile(null);
-        await AsyncStorage.removeItem(PROFILE_KEY);
+        await profileStorage.removeItem(PROFILE_KEY);
         await api.setToken(null);
         setLoading(false);
       }

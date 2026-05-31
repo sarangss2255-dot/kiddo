@@ -2,13 +2,14 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { api, setApiToken } from '../api/client';
 import type { AuthUser } from '../types/auth';
-import { auth } from '../../firebase';
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { auth, googleProvider } from '../../firebase';
+import { signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth';
 
 interface AuthContextValue {
   user: AuthUser | null;
   token: string | null;
   login: (identifier: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => void;
 }
 
@@ -28,41 +29,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setApiToken(token ?? undefined);
   }, [token]);
 
+  const finishBackendLogin = async (idToken: string) => {
+    const { data: payload } = await api.post<any>('/auth/firebase', { idToken });
+    const dbUser = payload.user;
+
+    if (dbUser.role !== 'admin') {
+      await signOut(auth);
+      setApiToken(undefined);
+      throw new Error('Access denied: You are not authorized as an administrator.');
+    }
+
+    const adminUser: AuthUser = {
+      id: dbUser.id,
+      role: dbUser.role,
+      firstName: dbUser.firstName || 'Admin',
+      lastName: dbUser.lastName || '',
+      email: dbUser.email,
+    };
+
+    setToken(payload.accessToken);
+    setUser(adminUser);
+    localStorage.setItem(TOKEN_KEY, payload.accessToken);
+    localStorage.setItem(USER_KEY, JSON.stringify(adminUser));
+    setApiToken(payload.accessToken);
+  };
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       token,
       login: async (identifier: string, password: string) => {
-        // Step 1: Sign in with Firebase Auth
         const userCredential = await signInWithEmailAndPassword(auth, identifier, password);
-        const firebaseUser = userCredential.user;
-        
-        // Step 2: Retrieve the fresh Firebase ID Token
-        const idToken = await firebaseUser.getIdToken();
-
-        // Step 3: Authenticate / obtain MongoDB session profile from the backend auth check
-        setApiToken(idToken);
-        const { data: dbUser } = await api.get<any>('/auth/me');
-
-        // Step 4: Verify the user role is admin
-        if (dbUser.role !== 'admin') {
-          await signOut(auth);
-          setApiToken(undefined);
-          throw new Error('Access denied: You are not authorized as an administrator.');
-        }
-
-        const adminUser: AuthUser = {
-          id: dbUser._id,
-          role: dbUser.role,
-          firstName: dbUser.firstName || dbUser.displayName || 'Admin',
-          lastName: dbUser.lastName || '',
-          email: dbUser.email,
-        };
-
-        setToken(idToken);
-        setUser(adminUser);
-        localStorage.setItem(TOKEN_KEY, idToken);
-        localStorage.setItem(USER_KEY, JSON.stringify(adminUser));
+        await finishBackendLogin(await userCredential.user.getIdToken());
+      },
+      loginWithGoogle: async () => {
+        const userCredential = await signInWithPopup(auth, googleProvider);
+        await finishBackendLogin(await userCredential.user.getIdToken());
       },
       logout: () => {
         signOut(auth).catch(console.error);

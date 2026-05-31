@@ -1,9 +1,20 @@
 import { auth } from './firebase';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const PROD_API_BASE_URL = 'https://kiddo-backend-l4qf.onrender.com/api/v1';
 const LOCAL_API_BASE_URL = 'http://localhost:4000/api/v1';
 const TOKEN_KEY = 'kiddo_token';
+
+const tokenStorage = {
+  getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),
+  setItem: (key: string, value: string) => {
+    localStorage.setItem(key, value);
+    return Promise.resolve();
+  },
+  removeItem: (key: string) => {
+    localStorage.removeItem(key);
+    return Promise.resolve();
+  },
+};
 
 const getBaseUrl = () => {
   const configured = import.meta.env.VITE_API_URL;
@@ -20,16 +31,7 @@ const getBaseUrl = () => {
 };
 
 const getHeaders = async () => {
-  // Try to get token from AsyncStorage first for immediate availability
-  let token = await AsyncStorage.getItem(TOKEN_KEY);
-  
-  // If Firebase is ready, get a fresh token (this is more reliable)
-  const user = auth.currentUser;
-  if (user) {
-    token = await user.getIdToken();
-    // Cache the fresh token
-    if (token) await AsyncStorage.setItem(TOKEN_KEY, token);
-  }
+  const token = await tokenStorage.getItem(TOKEN_KEY);
 
   if (!token) return {};
 
@@ -42,11 +44,12 @@ const getHeaders = async () => {
 export const api = {
   setToken: async (token: string | null) => {
     if (token) {
-      await AsyncStorage.setItem(TOKEN_KEY, token);
+      await tokenStorage.setItem(TOKEN_KEY, token);
     } else {
-      await AsyncStorage.removeItem(TOKEN_KEY);
+      await tokenStorage.removeItem(TOKEN_KEY);
     }
   },
+  getFirebaseIdToken: async () => auth.currentUser?.getIdToken(),
   get: async (endpoint: string) => {
     const headers = await getHeaders();
     const response = await fetch(`${getBaseUrl()}${endpoint}`, { headers });

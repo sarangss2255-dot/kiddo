@@ -1,39 +1,45 @@
-import { Suspense, lazy } from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { Header } from '../components/Header';
+import { Hero } from '../components/Hero';
+import { FeatureGrid } from '../components/FeatureGrid';
+import { Footer } from '../components/Footer';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import './site.css';
 
-const PublicLandingPage = () => (
-  <div className="p-8 text-center text-white bg-[#121212]">
-    <h1 className="text-3xl font-bold">Kiddo Home</h1>
-    <p className="mt-2">Welcome to Kiddo App.</p>
-  </div>
+const PublicLandingPage = lazy(() => import('./pages/PublicLandingPage').then(m => ({ default: m.PublicLandingPage })));
+const DownloadPage = lazy(() => import('./pages/DownloadPage').then(m => ({ default: m.DownloadPage })));
+const AuthPage = lazy(() => import('./pages/app/AuthPage').then(m => ({ default: m.AuthPage })));
+const KiddoApp = lazy(() => import('./pages/app/KiddoApp').then(m => ({ default: m.KiddoApp })));
+
+// The new home page assembly using brutalist theme
+const TradingLanding = () => (
+  <>
+    <Hero />
+    <FeatureGrid />
+  </>
 );
 
-const DownloadPage = () => (
-  <div className="p-8 text-center text-white bg-[#121212]">
-    <h1 className="text-3xl font-bold">Download</h1>
-    <p className="mt-2">Download the app here.</p>
-  </div>
-);
-
-const AuthPage = () => (
-  <div className="p-8 text-center text-white bg-[#121212]">
-    <h1 className="text-3xl font-bold">Login / Signup</h1>
-    <p className="mt-2">Authentication coming soon.</p>
-  </div>
-);
-
-const KiddoApp = () => (
-  <div className="p-8 text-center text-white bg-[#121212]">
-    <h1 className="text-3xl font-bold">Kid Dashboard</h1>
-    <p className="mt-2">Your missions and games.</p>
-  </div>
-);
-export function SiteApp() {
+export default function SiteApp() {
   return (
-    <div className="p-8 text-center text-white bg-[#121212]">
-      <h1 className="text-3xl font-bold">Kiddo Site</h1>
-      <p className="mt-2">Site is working.</p>
+    <div className="min-h-screen relative bg-[#121212] text-white">
+      <div className="relative z-10 pb-16">
+        <Header />
+        <main>
+          <ErrorBoundary>
+            <Suspense fallback={<div className="p-8 text-center font-label font-bold text-white uppercase">INITIALIZING...</div>}>
+              <Routes>
+                <Route path="/" element={<TradingLanding />} />
+                <Route path="/download" element={<DownloadPage />} />
+                <Route path="/auth" element={<AuthPage />} />
+                <Route path="/app/*" element={<KiddoApp />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
+        </main>
+        <Footer />
+      </div>
     </div>
   );
 }

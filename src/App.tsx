@@ -1,7 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import AdminApp from './admin/App';
 import { AuthProvider as AdminAuthProvider } from './admin/context/AuthContext';
-import { SiteApp } from './site/SiteApp';
+import SiteApp from './site/SiteApp';
 import './admin/styles.css';
 import { applyTheme } from './admin/common/theme';
 
