@@ -18,6 +18,8 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const TOKEN_KEY = 'kiddo_admin_token';
 const USER_KEY = 'kiddo_admin_user';
 
+const ADMIN_ROLES = ['super_admin', 'manager', 'school_admin'];
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
   const [user, setUser] = useState<AuthUser | null>(() => {
@@ -30,10 +32,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [token]);
 
   const finishBackendLogin = async (idToken: string) => {
-    const { data: payload } = await api.post<any>('/auth/firebase', { idToken });
+    const { data: payload } = await api.post<any>('/admin/auth/login', { idToken });
     const dbUser = payload.user;
 
-    if (dbUser.role !== 'admin') {
+    if (!ADMIN_ROLES.includes(dbUser.role)) {
       await signOut(auth);
       setApiToken(undefined);
       throw new Error('Access denied: You are not authorized as an administrator.');
