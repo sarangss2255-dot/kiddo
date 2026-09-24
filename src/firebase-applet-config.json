@@ -1,10 +1,10 @@
 {
-  "projectId": "kiddo-bf68d",
-  "appId": "1:6413596564:web:6693f579800cd703254181",
-  "apiKey": "AIzaSyDrAtpsmxp46I_U3sKHm0OEG3JUVEfWtMs",
-  "authDomain": "kiddo-bf68d.firebaseapp.com",
-  "storageBucket": "kiddo-bf68d.firebasestorage.app",
-  "messagingSenderId": "6413596564",
-  "measurementId": "G-3QEFEZ3XFG",
+  "projectId": "kiddoapp-india",
+  "appId": "1:16467957516:web:235e7d46b5f74803c99b29",
+  "apiKey": "AIzaSyDXgFUY795C_7iYV7CnBeOVpo2T2yHI3fM",
+  "authDomain": "kiddoapp-india.firebaseapp.com",
+  "storageBucket": "kiddoapp-india.firebasestorage.app",
+  "messagingSenderId": "16467957516",
+  "measurementId": "G-3VZZP31681",
   "firestoreDatabaseId": ""
 }

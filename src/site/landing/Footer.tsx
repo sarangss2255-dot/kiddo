@@ -1,0 +1,55 @@
+import React from 'react';
+
+const footerLinks = {
+  Product: ['Features', 'For Parents', 'For Teachers', 'Safety', 'Pricing'],
+  Company: ['About', 'Contact'],
+  Legal: ['Privacy', 'Terms', 'Child Safety'],
+};
+
+export function Footer() {
+  return (
+    <footer className="bg-kiddo-navy text-white/80 py-14">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid md:grid-cols-4 gap-10 md:gap-8">
+          <div className="md:col-span-1">
+            <div className="flex items-center gap-2.5 mb-4">
+              <img src="/kiddo-logo-64.png" alt="KidDo" className="h-9 w-9 rounded-xl" />
+              <span className="text-[22px] font-extrabold text-white">KidDo</span>
+            </div>
+            <p className="text-[15px] leading-relaxed text-white/60">
+              Good Habits Today.
+              <br />
+              Great Kids Tomorrow.
+            </p>
+          </div>
+
+          {Object.entries(footerLinks).map(([category, links]) => (
+            <div key={category}>
+              <h4 className="text-sm font-bold text-white uppercase tracking-wide mb-4">
+                {category}
+              </h4>
+              <ul className="space-y-3">
+                {links.map((link) => (
+                  <li key={link}>
+                    <a
+                      href="#"
+                      className="text-[15px] text-white/60 hover:text-white transition-colors"
+                    >
+                      {link}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-3">
+          <p className="text-sm text-white/50">© 2026 KidDo. All rights reserved.</p>
+          <p className="text-sm text-white/40">kiddoapp.in</p>
+        </div>
+      </div>
+    </footer>
+  );
+}
+

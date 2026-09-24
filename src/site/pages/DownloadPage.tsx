@@ -1,216 +1,160 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Apple, ArrowRight, Download, QrCode, ShieldCheck, Smartphone, TabletSmartphone } from 'lucide-react';
+import Link from 'next/link';
+import { Apple, Check, Download, QrCode, ShieldCheck, Smartphone, TabletSmartphone } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
+import { Card, CardContent } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
 import { Reveal } from '../components/Reveal';
-import { SiteHeader } from '../components/SiteHeader';
-
-const previewSlides = [
-  {
-    title: 'MISSION BOARD',
-    body: 'CHILD TASKS STAY DIRECT, VISIBLE, AND EASY TO TRIGGER.',
-  },
-  {
-    title: 'PARENT APPROVALS',
-    body: 'OVERSIGHT, RELEASE, AND CONFIRMATION STAY IN ONE HARD-EDGED FLOW.',
-  },
-  {
-    title: 'REWARD LOOP',
-    body: 'STREAKS AND INCENTIVES READ LIKE SYSTEM OUTPUT, NOT DECORATION.',
-  },
-];
 
 export function DownloadPage() {
-  const [activeSlide, setActiveSlide] = useState(0);
-
   return (
-    <div className="min-h-screen bg-[#121212] text-white">
-      <SiteHeader />
-
-      <main className="pb-20 lg:pr-[200px]">
-        <section className="border-b-8 border-black bg-white px-4 py-16 text-black md:px-6 lg:px-8">
-          <div className="mx-auto max-w-[1180px]">
-            <div className="neo-shadow-black inline-flex rotate-[-2deg] border-4 border-black bg-[#ccff00] px-4 py-2 font-label text-xs font-bold">
-              ANDROID DELIVERY / FIELD READY
-            </div>
-
-            <Reveal className="mt-8 max-w-6xl">
-              <h1 className="font-display text-[24vw] leading-[0.85] md:text-[150px]">
-                GET THE
-                <br />
-                BUILD
-              </h1>
-            </Reveal>
-
-            <Reveal className="mt-6 max-w-3xl">
-              <p className="text-2xl font-medium italic leading-tight">
-                Download the current KidDo package without losing the brutalist system language.
-              </p>
-            </Reveal>
-
-            <Reveal className="mt-10 flex flex-wrap gap-4">
-              <a
-                href="/kiddo-app.apk"
-                download
-                className="neo-shadow-black inline-flex items-center gap-3 border-4 border-black bg-[#ccff00] px-6 py-4 font-label text-sm font-bold text-black transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
-              >
-                <Download size={18} /> DOWNLOAD APK
-              </a>
-              <span className="inline-flex items-center gap-3 border-4 border-black bg-black px-6 py-4 font-label text-sm font-bold text-white">
-                <Apple size={18} /> IOS PENDING
-              </span>
-            </Reveal>
+    <div className="min-h-screen bg-kiddo-warm">
+      <div className="mx-auto flex min-h-screen w-full max-w-[1240px] flex-col px-4 py-6 md:px-6 lg:px-8">
+        <header className="flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5">
+            <img src="/kiddo-logo-64.png" alt="" className="h-9 w-9 rounded-xl shadow-sm" />
+            <span className="text-[22px] font-extrabold tracking-tight text-kiddo-navy">KidDo</span>
+          </Link>
+          <div className="flex items-center gap-2.5">
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/auth">Log in</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/">Back to home</Link>
+            </Button>
           </div>
-        </section>
+        </header>
 
-        <section className="border-b-8 border-black bg-[#121212] px-4 py-16 md:px-6 lg:px-8">
-          <div className="mx-auto grid max-w-[1180px] gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+        <main className="flex-1 py-12 md:py-16">
+          {/* Hero */}
+          <section className="text-center">
             <Reveal>
-              <div className="neo-shadow-white border-8 border-black bg-white p-6 text-black">
-                <div className="font-label text-xs font-bold">SCAN TO INSTALL</div>
-                <div className="mt-4 font-display text-5xl leading-[0.85]">OPEN ON DEVICE</div>
-                <p className="mt-4 text-base font-medium leading-relaxed">
-                  Use the QR handoff when the family device is already in hand and needs the package directly.
-                </p>
-                <div className="mt-8 grid place-items-center border-4 border-black bg-[#121212] p-6 text-white">
-                  <QrCode size={150} />
-                </div>
+              <Badge variant="sky" className="px-4 py-1.5 text-xs">
+                Android · Field ready
+              </Badge>
+              <h1 className="mx-auto mt-6 max-w-[760px] text-[38px] font-extrabold leading-[1.05] tracking-tight text-kiddo-navy md:text-[56px]">
+                Get the KidDo app
+                <span className="block text-kiddo-blue">for your family.</span>
+              </h1>
+              <p className="mx-auto mt-5 max-w-[560px] text-[17px] leading-relaxed text-kiddo-muted">
+                Download the Android package, install it, and sign in with your family
+                account. KidDo runs on phones, tablets, and Chromebooks.
+              </p>
+
+              <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
+                <Button asChild size="xl" className="w-full sm:w-auto">
+                  <a href="/kiddo-app.apk" download>
+                    <Download />
+                    Download APK
+                  </a>
+                </Button>
+                <span className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-4 text-base font-bold text-kiddo-muted">
+                  <Apple className="h-5 w-5" />
+                  iOS — coming soon
+                </span>
               </div>
+            </Reveal>
+          </section>
+
+          {/* QR + install steps */}
+          <section className="mt-16 md:mt-20 grid gap-6 lg:grid-cols-2">
+            <Reveal>
+              <Card className="h-full border-slate-200/80 shadow-[0_24px_60px_-20px_rgba(27,58,75,0.12)]">
+                <CardContent className="flex h-full flex-col items-center justify-center p-8 text-center">
+                  <span className="text-sm font-bold uppercase tracking-wide text-kiddo-blue">Scan to install</span>
+                  <h2 className="mt-3 text-2xl font-extrabold text-kiddo-navy">Open it on your device</h2>
+                  <p className="mt-2 max-w-[380px] text-[15px] text-kiddo-muted">
+                    Use the QR handoff when the family device is already in hand and needs the package directly.
+                  </p>
+                  <div className="mt-7 grid place-items-center rounded-2xl border-2 border-slate-200 bg-white p-8">
+                    <QrCode className="h-40 w-40 text-kiddo-navy" />
+                  </div>
+                </CardContent>
+              </Card>
             </Reveal>
 
             <Reveal delayMs={100}>
-              <div className="neo-shadow-black border-8 border-black bg-[#ccff00] p-6 text-black">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="font-label text-xs font-bold">LIVE PREVIEW</div>
-                    <div className="mt-3 font-display text-5xl leading-[0.85]">{previewSlides[activeSlide].title}</div>
-                  </div>
-                  <div className="border-4 border-black bg-white p-4">
-                    <Smartphone size={24} />
-                  </div>
-                </div>
-                <p className="mt-5 max-w-xl text-base font-medium leading-relaxed">{previewSlides[activeSlide].body}</p>
-
-                <div className="mt-8 border-4 border-black bg-white p-5">
-                  <div className="font-label text-xs font-bold text-black">MOBILE SURFACE</div>
-                  <div className="mt-5 grid gap-3">
-                    {[72, 54, 88].map((width, index) => (
-                      <div key={width} className="border-4 border-black bg-[#f8fafc] px-4 py-3">
-                        <div className="flex items-center justify-between gap-3 font-label text-xs font-bold text-black">
-                          <span>PANEL 0{index + 1}</span>
-                          <span>ACTIVE</span>
-                        </div>
-                        <div className="mt-3 h-3 border-4 border-black bg-white">
-                          <div className="h-full bg-[#ccff00]" style={{ width: `${width}%` }} />
-                        </div>
+              <Card className="h-full border-slate-200/80 bg-white shadow-[0_24px_60px_-20px_rgba(27,58,75,0.12)]">
+                <CardContent className="flex h-full flex-col justify-center p-8">
+                  <span className="text-sm font-bold uppercase tracking-wide text-kiddo-blue">Install flow</span>
+                  <div className="mt-6 space-y-4">
+                    {[
+                      'Download the Android APK.',
+                      'Allow installation when Android prompts.',
+                      'Sign in with the family account and select the workspace.',
+                    ].map((item, index) => (
+                      <div key={item} className="flex items-start gap-4">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-kiddo-sky/20 text-sm font-extrabold text-kiddo-blue">
+                          {index + 1}
+                        </span>
+                        <p className="pt-1.5 text-[15px] font-semibold text-kiddo-navy">{item}</p>
                       </div>
                     ))}
                   </div>
-                </div>
 
-                <div className="mt-6 flex gap-3">
-                  {previewSlides.map((item, index) => (
-                    <button
-                      key={item.title}
-                      type="button"
-                      onClick={() => setActiveSlide(index)}
-                      className={`h-4 border-4 border-black ${index === activeSlide ? 'w-16 bg-black' : 'w-4 bg-white'}`}
-                    />
-                  ))}
-                </div>
-              </div>
+                  <div className="mt-8 rounded-2xl bg-kiddo-mint/50 p-5">
+                    <p className="text-[14px] font-semibold leading-relaxed text-kiddo-muted">
+                      <ShieldCheck className="mr-1.5 inline h-4 w-4 text-kiddo-green" />
+                      The package path is explicit about safety, installation, and ownership.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             </Reveal>
-          </div>
-        </section>
+          </section>
 
-        <section className="border-b-8 border-black bg-white px-4 py-16 text-black md:px-6 lg:px-8">
-          <div className="mx-auto grid max-w-[1180px] gap-6 md:grid-cols-3">
+          {/* Perks */}
+          <section className="mt-10 grid gap-4 md:grid-cols-3">
             {[
               {
                 icon: ShieldCheck,
-                title: 'VERIFIED PACKAGE',
-                body: 'THE PACKAGE PATH STAYS EXPLICIT ABOUT SAFETY, INSTALLATION, AND OWNERSHIP.',
+                title: 'Verified package',
+                body: 'Safe to install and clearly attributed to KidDo.',
               },
               {
                 icon: TabletSmartphone,
-                title: 'DEVICE READY',
-                body: 'PHONES, TABLETS, AND CHROMEBOOKS CAN ENTER THE SAME SHIPPING LOOP.',
+                title: 'Device ready',
+                body: 'Phones, tablets, and Chromebooks can join the same loop.',
               },
               {
-                icon: Download,
-                title: 'DIRECT ACCESS',
-                body: 'NO SOFT DETOURS. DOWNLOAD, INSTALL, AND CONTINUE INTO THE PRODUCT.',
+                icon: Smartphone,
+                title: 'Direct access',
+                body: 'Download, install, and continue straight into the product.',
               },
             ].map((item, index) => (
               <Reveal key={item.title} delayMs={index * 80}>
-                <div className="neo-shadow-black h-full border-4 border-black bg-white p-6">
-                  <div className="inline-flex border-4 border-black bg-[#ccff00] p-3">
-                    <item.icon size={22} />
-                  </div>
-                  <div className="mt-5 font-display text-4xl leading-[0.85]">{item.title}</div>
-                  <p className="mt-4 text-base font-medium leading-relaxed">{item.body}</p>
-                </div>
+                <Card className="h-full border-slate-200/70 hover:-translate-y-1 hover:shadow-[0_12px_32px_rgba(27,58,75,0.08)] transition-all duration-300">
+                  <CardContent className="p-6">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-kiddo-sky/20 text-kiddo-blue">
+                      <item.icon className="h-5 w-5" />
+                    </span>
+                    <h3 className="mt-4 text-base font-extrabold text-kiddo-navy">{item.title}</h3>
+                    <p className="mt-1.5 text-[14px] leading-relaxed text-kiddo-muted">{item.body}</p>
+                  </CardContent>
+                </Card>
               </Reveal>
             ))}
-          </div>
-        </section>
+          </section>
 
-        <section className="border-b-8 border-black bg-[#ccff00] px-4 py-16 text-black md:px-6 lg:px-8">
-          <div className="mx-auto max-w-[1180px]">
-            <div className="font-label text-xs font-bold">INSTALL FLOW</div>
-            <div className="mt-5 grid gap-4">
-              {[
-                'DOWNLOAD THE ANDROID APK.',
-                'ALLOW INSTALLATION WHEN ANDROID PROMPTS.',
-                'SIGN IN WITH THE FAMILY ACCOUNT AND SELECT THE WORKSPACE.',
-              ].map((item, index) => (
-                <Reveal key={item} delayMs={index * 80}>
-                  <div className="neo-shadow-black grid gap-4 border-4 border-black bg-white p-5 text-black sm:grid-cols-[88px_1fr] sm:items-start">
-                    <div className="grid h-[88px] w-[88px] place-items-center border-4 border-black bg-black font-display text-4xl leading-none text-[#ccff00]">
-                      0{index + 1}
-                    </div>
-                    <div className="pt-1 font-label text-sm font-bold">{item}</div>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-black px-4 py-16 text-white md:px-6 lg:px-8">
-          <div className="mx-auto grid max-w-[1180px] gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
-            <Reveal>
-              <div>
-                <div className="font-label text-xs font-bold text-[#ccff00]">NEXT ACTION</div>
-                <h2 className="mt-4 font-display text-6xl leading-[0.85] md:text-[110px]">
-                  INSTALL
-                  <br />
-                  THEN
-                  <br />
-                  ENTER
-                </h2>
-              </div>
-            </Reveal>
-
-            <Reveal delayMs={100}>
-              <div className="flex flex-wrap gap-4">
-                <a
-                  href="/kiddo-app.apk"
-                  download
-                  className="neo-shadow-white inline-flex items-center gap-3 border-4 border-black bg-white px-6 py-4 font-label text-sm font-bold text-black transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
-                >
-                  GET APK <ArrowRight size={16} />
-                </a>
-                <Link
-                  to="/signup"
-                  className="neo-shadow-white inline-flex items-center gap-3 border-4 border-white bg-[#ccff00] px-6 py-4 font-label text-sm font-bold text-black transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
-                >
-                  OPEN ACCOUNT FLOW <ArrowRight size={16} />
+          {/* Final CTA */}
+          <section className="mt-14 rounded-3xl bg-kiddo-navy px-6 py-12 text-center text-white md:px-12">
+            <h2 className="text-2xl font-extrabold md:text-3xl">Installed? Time to set up.</h2>
+            <p className="mx-auto mt-3 max-w-[480px] text-[15px] text-white/70">
+              Sign in with your family account and pick your workspace.
+            </p>
+            <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Button asChild size="xl" className="w-full bg-kiddo-blue text-white hover:bg-white hover:text-kiddo-navy sm:w-auto">
+                <Link href="/auth">
+                  <Check />
+                  Log in to KidDo
                 </Link>
-              </div>
-            </Reveal>
-          </div>
-        </section>
-      </main>
+              </Button>
+              <Button asChild variant="outline" size="xl" className="w-full border-white/25 bg-transparent text-white hover:bg-white/10 sm:w-auto">
+                <Link href="/">Back to the site</Link>
+              </Button>
+            </div>
+          </section>
+        </main>
+      </div>
     </div>
   );
 }

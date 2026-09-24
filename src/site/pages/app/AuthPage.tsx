@@ -1,8 +1,28 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AnimatePresence, motion } from 'motion/react';
-import { ArrowRight, Check, ChevronRight, Lock, Mail, Shield, Users } from 'lucide-react';
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import {
+  ArrowRight,
+  Check,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  Shield,
+  Sparkles,
+  Star,
+  Users,
+  Zap,
+} from 'lucide-react';
+import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
+import { Label } from '../../../components/ui/Label';
+import { Card, CardContent } from '../../../components/ui/Card';
+import { Separator } from '../../../components/ui/Separator';
+import { Alert, AlertDescription } from '../../../components/ui/Alert';
+import { PhoneDashboard } from '../../landing/PhoneDashboard';
 import { cn } from '../../../lib/utils';
 import { api } from '../../../api';
 import { auth, googleProvider } from '../../../firebase';
@@ -14,19 +34,21 @@ interface AuthPageProps {
 
 const avatars = ['FOX', 'PANDA', 'LION', 'KOALA', 'BEE', 'UNICORN', 'CAT', 'BEAR'];
 const availableGoals = [
-  { id: 'routines', label: 'MORNING + BEDTIME ROUTINES' },
-  { id: 'chores', label: 'HELPING WITH CHORES' },
-  { id: 'learning', label: 'PUZZLES + DAILY LEARNING' },
-  { id: 'screen', label: 'HEALTHIER SCREEN BALANCE' },
-  { id: 'habits', label: 'HYGIENE + CONSISTENCY' },
+  { id: 'routines', label: 'Morning + bedtime routines' },
+  { id: 'chores', label: 'Helping with chores' },
+  { id: 'learning', label: 'Puzzles + daily learning' },
+  { id: 'screen', label: 'Healthier screen balance' },
+  { id: 'habits', label: 'Hygiene + consistency' },
 ];
 
 export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
-  const navigate = useNavigate();
+  const router = useRouter();
+  const prefersReducedMotion = useReducedMotion();
   const [step, setStep] = useState<'auth' | 'otp' | 'role' | 'onboarding'>('auth');
   const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState(['', '', '', '']);
   const [childName, setChildName] = useState('');
   const [childAge, setChildAge] = useState('');
@@ -35,23 +57,30 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const ease: "linear" | [number, number, number, number] = prefersReducedMotion
+    ? "linear"
+    : [0.22, 1, 0.36, 1];
+  const fadeProps = prefersReducedMotion
+    ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } }
+    : { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -16 } };
+
   const finishLogin = async (payload: any) => {
     await api.setToken(payload.accessToken);
     localStorage.setItem('kiddo_auth_user', JSON.stringify(payload.user));
 
-    if (payload.user.role === 'admin') {
-      navigate('/admin');
+    if (['super_admin', 'manager', 'school_admin'].includes(payload.user.role)) {
+      router.push('/admin');
       return;
     }
 
     if (payload.user.role === 'child') {
       localStorage.setItem('kiddo_user_role', 'child');
-      navigate('/app/child');
+      router.push('/app/child');
       return;
     }
 
     localStorage.setItem('kiddo_user_role', 'parent');
-    navigate('/app/parent');
+    router.push('/app/parent');
   };
 
   const handleAuthSubmit = async (event: React.FormEvent) => {
@@ -121,7 +150,7 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
 
   const handleRoleSelect = (role: 'parent' | 'child') => {
     localStorage.setItem('kiddo_user_role', role);
-    navigate(role === 'parent' ? '/app/parent' : '/app/child');
+    router.push(role === 'parent' ? '/app/parent' : '/app/child');
   };
 
   const toggleGoal = (goalId: string) => {
@@ -136,249 +165,327 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
     setStep('role');
   };
 
-  const storedName = localStorage.getItem('kiddo_onboarding_child_name') || 'LEO';
-  const storedAvatar = localStorage.getItem('kiddo_onboarding_child_avatar') || 'FOX';
+  const storedName =
+    (typeof window !== 'undefined'
+      ? localStorage.getItem('kiddo_onboarding_child_name')
+      : null) || 'LEO';
+  const storedAvatar =
+    (typeof window !== 'undefined'
+      ? localStorage.getItem('kiddo_onboarding_child_avatar')
+      : null) || 'FOX';
+
+  const isLoginStep = step === 'auth';
 
   return (
-    <div className="min-h-screen bg-[#121212] text-white">
-      <div className="mx-auto flex min-h-screen w-full max-w-[1280px] flex-col px-4 py-6 md:px-6 lg:px-8">
-        <header className="flex items-center justify-between gap-4 border-4 border-black bg-white px-4 py-4 text-black">
-          <button type="button" className="flex items-center gap-3 text-left" onClick={() => navigate('/')}>
-            <div className="grid h-12 w-12 rotate-[3deg] place-items-center border-4 border-black bg-black text-white">
-              <span className="font-display text-2xl leading-none">K</span>
-            </div>
-            <div>
-              <div className="text-2xl font-extrabold leading-none">KidDo</div>
-              <div className="mt-1 font-label text-[10px] font-bold">ACCESS LAYER</div>
-            </div>
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            className="neo-shadow-black border-4 border-black bg-[#ccff00] px-4 py-3 font-label text-xs font-bold text-black transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
+    <div className="min-h-screen bg-kiddo-warm">
+      {/* Desktop: 50/50 split */}
+      <div className="grid min-h-screen w-full md:grid-cols-2">
+        {/* LEFT 50% — KidDo brand experience (tablet/desktop) */}
+        <aside className="relative hidden md:flex flex-col overflow-hidden bg-gradient-to-br from-kiddo-sky/15 via-kiddo-warm to-kiddo-mint/40 p-10 xl:p-16">
+          {/* Subtle decorative elements */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute -top-20 -left-20 h-72 w-72 rounded-full bg-kiddo-blue/10 blur-[90px]" />
+            <div className="absolute bottom-[-10%] right-[5%] h-80 w-80 rounded-full bg-kiddo-orange/10 blur-[100px]" />
+            <div className="absolute top-[38%] right-[12%] h-40 w-40 rounded-full bg-kiddo-mint blur-[70px]" />
+            <Star className="absolute left-[12%] top-[30%] h-4 w-4 text-kiddo-blue/30" />
+            <Star className="absolute right-[22%] top-[18%] h-3 w-3 text-kiddo-orange/40" />
+            <Sparkles className="absolute left-[18%] top-[58%] h-4 w-4 text-kiddo-green/40" />
+          </div>
+
+          {/* Brand */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, ease }}
+            className="relative z-10 flex items-center gap-2.5"
           >
-            BACK
-          </button>
-        </header>
+            <img src="/kiddo-logo-64.png" alt="" className="h-10 w-10 rounded-xl shadow-sm" />
+            <span className="text-2xl font-extrabold tracking-tight text-kiddo-navy">KidDo</span>
+          </motion.div>
 
-        <main className="my-auto grid gap-8 py-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-          <section className="hidden lg:block">
-            <div className="neo-shadow-white border-8 border-black bg-[#ccff00] p-6 text-black">
-              <div className="inline-flex rotate-[-3deg] border-4 border-black bg-white px-3 py-2 font-label text-xs font-bold">
-                ENTRY BLUEPRINT
-              </div>
-              <h1 className="mt-6 font-display text-[96px] leading-[0.85]">
-                AUTH
-                <br />
-                BUILD
-                <br />
-                SHIP
+          {/* Copy */}
+          <div className="relative z-10 mt-14 max-w-[460px]">
+            <motion.div
+              initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1, ease }}
+            >
+              <h1 className="text-[44px] font-extrabold leading-[1.08] tracking-tight text-kiddo-navy">
+                Making everyday tasks feel like{' '}
+                <span className="text-kiddo-blue">an adventure.</span>
               </h1>
-              <p className="mt-6 max-w-lg text-lg font-medium leading-relaxed">
-                Every login, onboarding, and role transition now follows the same disruptor system used across the landing and download surfaces.
+              <p className="mt-5 text-[17px] leading-relaxed text-kiddo-muted">
+                KidDo helps families turn everyday responsibilities into fun missions,
+                rewards, and progress.
               </p>
+            </motion.div>
+          </div>
 
-              <div className="mt-8 grid gap-4">
-                {[
-                  'ACCOUNT ENTRY',
-                  'CHILD PROFILE SETUP',
-                  'WORKSPACE ROUTING',
-                ].map((item, index) => (
-                  <div key={item} className="neo-shadow-black grid gap-4 border-4 border-black bg-white p-4 sm:grid-cols-[72px_1fr] sm:items-start">
-                    <div className="grid h-[72px] w-[72px] place-items-center border-4 border-black bg-black font-display text-4xl text-[#ccff00]">
-                      0{index + 1}
-                    </div>
-                    <div className="pt-2 font-label text-sm font-bold text-black">{item}</div>
-                  </div>
-                ))}
+          {/* Real KidDo dashboard */}
+          <motion.div
+            initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 26 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.25, ease }}
+            className="relative z-10 mt-12 flex flex-1 items-end justify-start"
+          >
+            <div className="relative">
+              {/* Soft glow behind the device */}
+              <div className="absolute -inset-6 rounded-[40px] bg-kiddo-blue/15 blur-[45px]" />
+
+              {/* Device-style frame around the real dashboard */}
+              <div
+                className="relative w-[300px] rounded-[38px] p-2.5 shadow-[0_40px_80px_-20px_rgba(27,58,75,0.35)]"
+                style={{ background: 'linear-gradient(145deg, #2a2a2a, #111)' }}
+              >
+                <div className="overflow-hidden rounded-[30px]">
+                  <PhoneDashboard variant="screen" />
+                </div>
+              </div>
+
+              {/* Floating callouts */}
+              <div className="absolute -right-10 top-10 hidden xl:flex items-center gap-2 rounded-xl border border-slate-100 bg-white px-3.5 py-2.5 shadow-[0_8px_24px_rgba(27,58,75,0.10)]">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-kiddo-orange/15 text-kiddo-orange">
+                  <Zap className="h-3.5 w-3.5" />
+                </span>
+                <span className="text-[13px] font-bold text-kiddo-navy">+30 points earned</span>
+              </div>
+              <div className="absolute -left-12 bottom-24 hidden xl:flex items-center gap-2 rounded-xl border border-slate-100 bg-white px-3.5 py-2.5 shadow-[0_8px_24px_rgba(27,58,75,0.10)]">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-kiddo-green/15 text-kiddo-green">
+                  <Check className="h-3.5 w-3.5" />
+                </span>
+                <span className="text-[13px] font-bold text-kiddo-navy">Mission complete</span>
               </div>
             </div>
-          </section>
+          </motion.div>
+        </aside>
 
-          <section className="w-full">
-            <div className="neo-shadow-black border-8 border-black bg-white p-6 text-black md:p-8">
+        {/* RIGHT 50% — Auth */}
+        <section className="relative flex flex-col bg-white">
+          {/* Top bar: back to home */}
+          <div className="flex items-center justify-between px-6 py-5 md:px-10">
+            <div className="md:hidden flex items-center gap-2">
+              <img src="/kiddo-logo-64.png" alt="" className="h-8 w-8 rounded-lg" />
+              <span className="text-xl font-extrabold tracking-tight text-kiddo-navy">KidDo</span>
+            </div>
+            <Button asChild variant="ghost" size="sm" className="ml-auto">
+              <Link href="/">← Back to home</Link>
+            </Button>
+          </div>
+
+          {/* Centered auth container */}
+          <div className="flex flex-1 items-center justify-center px-5 pb-14 pt-4 sm:px-8">
+            <div className="w-full max-w-md">
               <AnimatePresence mode="wait">
-                {step === 'auth' && (
+                {isLoginStep && (
                   <motion.div
                     key="auth"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="space-y-8"
+                    {...fadeProps}
+                    transition={{ duration: 0.35, ease }}
+                    aria-live="polite"
                   >
-                    <div>
-                      <div className="font-label text-xs font-bold">{mode === 'login' ? 'ACCESS SYSTEM' : 'CREATE FAMILY SPACE'}</div>
-                      <h2 className="mt-4 font-display text-6xl leading-[0.85] md:text-[96px]">
-                        {mode === 'login' ? 'LOG IN' : 'SIGN UP'}
-                      </h2>
-                      <p className="mt-4 max-w-2xl text-base font-medium leading-relaxed">
-                        {mode === 'login'
-                          ? 'ENTER THE FAMILY DASHBOARD, CHILD MISSIONS, AND APPROVAL LOOP.'
-                          : 'CREATE THE ACCOUNT FIRST, THEN CONFIGURE THE CHILD PROFILE AND WORKSPACE.'}
-                      </p>
-                    </div>
+                    {/* Header */}
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-kiddo-sky/20 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wide text-kiddo-blue">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Welcome back
+                    </span>
+                    <h2 className="mt-5 text-[32px] font-extrabold leading-tight tracking-tight text-kiddo-navy">
+                      Log in to KidDo
+                    </h2>
+                    <p className="mt-2.5 text-[15px] leading-relaxed text-kiddo-muted">
+                      Enter your family dashboard, child missions, and the approval loop.
+                    </p>
 
-                    <form onSubmit={handleAuthSubmit} className="space-y-5">
-                      <div className="space-y-4">
-                        <label className="block space-y-2">
-                          <span className="font-label text-xs font-bold">EMAIL</span>
-                          <div className="flex items-center border-4 border-black bg-white">
-                            <div className="border-r-4 border-black px-4 py-4">
-                              <Mail size={18} />
-                            </div>
-                            <Input
-                              type="email"
-                              required
-                              value={email}
-                              onChange={(event) => setEmail(event.target.value)}
-                              placeholder="NAME@FAMILY.COM"
-                              className="h-14 border-0 bg-white px-4 font-label text-sm font-bold shadow-none outline-none"
-                            />
-                          </div>
-                        </label>
-
-                        <label className="block space-y-2">
-                          <span className="font-label text-xs font-bold">PASSWORD</span>
-                          <div className="flex items-center border-4 border-black bg-white">
-                            <div className="border-r-4 border-black px-4 py-4">
-                              <Lock size={18} />
-                            </div>
-                            <Input
-                              type="password"
-                              required
-                              value={password}
-                              onChange={(event) => setPassword(event.target.value)}
-                              placeholder="PASSWORD"
-                              className="h-14 border-0 bg-white px-4 font-label text-sm font-bold shadow-none outline-none"
-                            />
-                          </div>
-                        </label>
+                    {/* Form */}
+                    <form onSubmit={handleAuthSubmit} className="mt-8 space-y-5" noValidate={false}>
+                      <div className="space-y-2">
+                        <Label htmlFor="auth-email">Email</Label>
+                        <div className="relative">
+                          <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-kiddo-muted" />
+                          <Input
+                            id="auth-email"
+                            type="email"
+                            autoComplete="email"
+                            required
+                            value={email}
+                            onChange={(event) => setEmail(event.target.value)}
+                            placeholder="name@family.com"
+                            className="h-12 pl-10"
+                          />
+                        </div>
                       </div>
 
-                      <button
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="auth-password">Password</Label>
+                          <span className="text-[13px] font-semibold text-kiddo-muted">Forgot?</span>
+                        </div>
+                        <div className="relative">
+                          <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-kiddo-muted" />
+                          <Input
+                            id="auth-password"
+                            type={showPassword ? 'text' : 'password'}
+                            autoComplete="current-password"
+                            required
+                            value={password}
+                            onChange={(event) => setPassword(event.target.value)}
+                            placeholder="Password"
+                            className="h-12 pl-10 pr-11"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword((v) => !v)}
+                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                            aria-pressed={showPassword}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-lg text-kiddo-muted hover:text-kiddo-navy hover:bg-slate-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      {error ? (
+                        <Alert variant="destructive">
+                          <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                      ) : null}
+
+                      <Button
                         type="submit"
+                        size="xl"
+                        isLoading={loading}
                         disabled={loading}
-                        className="neo-shadow-black inline-flex w-full items-center justify-center gap-3 border-4 border-black bg-[#ccff00] px-6 py-4 font-label text-sm font-bold text-black transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
+                        className="w-full"
                       >
-                        {loading ? 'CHECKING ACCESS' : mode === 'login' ? 'SIGN IN' : 'CONTINUE SETUP'}
-                        <ArrowRight size={16} />
-                      </button>
+                        {loading ? 'Signing in...' : 'Sign in'}
+                        {!loading ? <ArrowRight /> : null}
+                      </Button>
                     </form>
 
-                    <button
+                    <div className="my-6 flex items-center gap-3">
+                      <Separator className="flex-1" />
+                      <span className="text-xs font-bold uppercase tracking-wide text-kiddo-muted">or</span>
+                      <Separator className="flex-1" />
+                    </div>
+
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="xl"
+                      className="w-full bg-white"
                       onClick={handleGoogleLogin}
                       disabled={loading}
-                      className="neo-shadow-black inline-flex w-full items-center justify-center gap-3 border-4 border-black bg-black px-6 py-4 font-label text-sm font-bold text-white transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none disabled:opacity-60"
                     >
-                      CONTINUE WITH GOOGLE
-                      <Shield size={16} />
-                    </button>
+                      <Shield className="h-4 w-4 text-kiddo-blue" />
+                      Continue with Google
+                    </Button>
 
-                    {error ? (
-                      <div className="border-4 border-black bg-red-100 px-4 py-3 font-label text-xs font-bold text-red-900">
-                        {error}
-                      </div>
-                    ) : null}
-
-                    <button
-                      type="button"
-                      onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-                      className="neo-shadow-black inline-flex items-center justify-center border-4 border-black bg-white px-5 py-4 font-label text-xs font-bold text-black transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
-                    >
-                      {mode === 'login' ? 'NEED AN ACCOUNT? START SETUP' : 'ALREADY HAVE AN ACCOUNT? SIGN IN'}
-                    </button>
+                    <p className="mt-7 text-center text-[15px] text-kiddo-muted">
+                      New to KidDo?{' '}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMode('signup');
+                          setError('');
+                        }}
+                        className="font-bold text-kiddo-blue underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                      >
+                        Create a family account
+                      </button>
+                    </p>
                   </motion.div>
                 )}
 
                 {step === 'otp' && (
                   <motion.div
                     key="otp"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="space-y-8"
+                    {...fadeProps}
+                    transition={{ duration: 0.35, ease }}
                   >
-                    <div>
-                      <div className="font-label text-xs font-bold">VERIFICATION CHECK</div>
-                      <h2 className="mt-4 font-display text-6xl leading-[0.85] md:text-[96px]">ENTER CODE</h2>
-                      <p className="mt-4 text-base font-medium leading-relaxed">
-                        Four digits. Direct confirmation. No soft modal behavior.
-                      </p>
-                    </div>
+                    <h2 className="text-[28px] font-extrabold tracking-tight text-kiddo-navy">
+                      Enter the code
+                    </h2>
+                    <p className="mt-2 text-[15px] text-kiddo-muted">
+                      Four digits. Direct confirmation.
+                    </p>
 
-                    <div className="flex flex-wrap gap-4">
+                    <div className="mt-7 flex gap-3">
                       {otp.map((digit, index) => (
                         <input
                           key={index}
                           id={`otp-${index}`}
                           type="text"
                           inputMode="numeric"
+                          autoComplete="one-time-code"
                           maxLength={1}
                           value={digit}
                           onChange={(event) => handleOtpChange(index, event.target.value)}
-                          className="neo-shadow-black h-20 w-16 border-4 border-black bg-white text-center font-display text-4xl text-black outline-none"
+                          className="h-16 w-14 rounded-xl border-2 border-slate-200 bg-white text-center text-2xl font-extrabold text-kiddo-navy outline-none focus:border-kiddo-blue focus:ring-2 focus:ring-kiddo-blue/25"
                         />
                       ))}
                     </div>
 
-                    <div className="border-4 border-black bg-[#ccff00] px-4 py-3 font-label text-xs font-bold text-black">
-                      DEMO MODE: ANY FOUR DIGITS WILL CONTINUE.
+                    <div className="mt-6 rounded-xl bg-kiddo-sky/15 px-4 py-3 text-xs font-bold text-kiddo-blue">
+                      Demo mode: any four digits will continue.
                     </div>
 
-                    <button type="button" onClick={() => setStep('auth')} className="font-label text-xs font-bold underline">
-                      CHANGE EMAIL
-                    </button>
+                    <Button type="button" variant="ghost" size="sm" className="mt-4" onClick={() => setStep('auth')}>
+                      Change email
+                    </Button>
                   </motion.div>
                 )}
 
                 {step === 'onboarding' && (
                   <motion.div
                     key="onboarding"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="space-y-8"
+                    {...fadeProps}
+                    transition={{ duration: 0.35, ease }}
                   >
-                    <div>
-                      <div className="font-label text-xs font-bold">CHILD PROFILE</div>
-                      <h2 className="mt-4 font-display text-6xl leading-[0.85] md:text-[96px]">CONFIGURE</h2>
-                    </div>
+                    <h2 className="text-[28px] font-extrabold tracking-tight text-kiddo-navy">
+                      Child profile
+                    </h2>
+                    <p className="mt-2 text-[15px] text-kiddo-muted">
+                      Set up your first child in a couple of steps.
+                    </p>
 
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <label className="space-y-2">
-                        <span className="font-label text-xs font-bold">NAME</span>
+                    <div className="mt-7 grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="onboard-name">Name</Label>
                         <Input
+                          id="onboard-name"
                           required
                           value={childName}
                           onChange={(event) => setChildName(event.target.value)}
-                          placeholder="LEO"
-                          className="h-14 border-4 border-black bg-white px-4 font-label text-sm font-bold shadow-none"
+                          placeholder="Leo"
+                          className="h-12"
                         />
-                      </label>
-                      <label className="space-y-2">
-                        <span className="font-label text-xs font-bold">AGE</span>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="onboard-age">Age</Label>
                         <Input
+                          id="onboard-age"
                           type="number"
                           value={childAge}
                           onChange={(event) => setChildAge(event.target.value)}
                           placeholder="8"
-                          className="h-14 border-4 border-black bg-white px-4 font-label text-sm font-bold shadow-none"
+                          className="h-12"
                         />
-                      </label>
+                      </div>
                     </div>
 
-                    <div className="space-y-3">
-                      <div className="font-label text-xs font-bold">SELECT AVATAR</div>
-                      <div className="grid grid-cols-4 gap-3">
+                    <div className="mt-6 space-y-3">
+                      <Label>Select an avatar</Label>
+                      <div className="grid grid-cols-4 gap-2.5">
                         {avatars.map((avatar) => (
                           <button
                             key={avatar}
                             type="button"
                             onClick={() => setSelectedAvatar(avatar)}
+                            aria-pressed={selectedAvatar === avatar}
                             className={cn(
-                              'border-4 border-black px-3 py-4 font-label text-xs font-bold transition-transform hover:translate-x-1 hover:translate-y-1',
-                              selectedAvatar === avatar ? 'bg-[#ccff00] text-black' : 'bg-white text-black'
+                              'rounded-xl border-2 px-3 py-3.5 text-xs font-extrabold tracking-wide transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                              selectedAvatar === avatar
+                                ? 'border-kiddo-blue bg-kiddo-sky/20 text-kiddo-blue'
+                                : 'border-slate-200 bg-white text-kiddo-muted hover:border-slate-300'
                             )}
                           >
                             {avatar}
@@ -387,9 +494,9 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                       </div>
                     </div>
 
-                    <div className="space-y-3">
-                      <div className="font-label text-xs font-bold">FAMILY GOALS</div>
-                      <div className="grid gap-3">
+                    <div className="mt-6 space-y-3">
+                      <Label>Family goals</Label>
+                      <div className="grid gap-2.5">
                         {availableGoals.map((goal) => {
                           const active = goals.includes(goal.id);
                           return (
@@ -397,81 +504,97 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                               key={goal.id}
                               type="button"
                               onClick={() => toggleGoal(goal.id)}
+                              aria-pressed={active}
                               className={cn(
-                                'flex items-center justify-between gap-4 border-4 border-black px-4 py-4 text-left font-label text-xs font-bold transition-transform hover:translate-x-1 hover:translate-y-1',
-                                active ? 'bg-[#ccff00] text-black' : 'bg-white text-black'
+                                'flex items-center justify-between gap-4 rounded-xl border-2 px-4 py-3.5 text-left text-sm font-bold transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                active
+                                  ? 'border-kiddo-green bg-kiddo-green/10 text-kiddo-navy'
+                                  : 'border-slate-200 bg-white text-kiddo-muted hover:border-slate-300'
                               )}
                             >
                               <span>{goal.label}</span>
-                              {active ? <Check size={16} /> : null}
+                              {active ? <Check className="h-4 w-4 text-kiddo-green" /> : null}
                             </button>
                           );
                         })}
                       </div>
                     </div>
 
-                    <button
+                    <Button
                       type="button"
+                      size="xl"
+                      className="mt-7 w-full"
                       onClick={handleOnboardingSubmit}
                       disabled={!childName}
-                      className="neo-shadow-black inline-flex w-full items-center justify-center gap-3 border-4 border-black bg-[#ccff00] px-6 py-4 font-label text-sm font-bold text-black transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none disabled:opacity-50"
                     >
-                      CONTINUE TO WORKSPACE
-                      <ArrowRight size={16} />
-                    </button>
+                      Continue to workspace
+                      <ArrowRight />
+                    </Button>
                   </motion.div>
                 )}
 
                 {step === 'role' && (
                   <motion.div
                     key="role"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="space-y-8"
+                    {...fadeProps}
+                    transition={{ duration: 0.35, ease }}
                   >
-                    <div>
-                      <div className="font-label text-xs font-bold">WORKSPACE SELECT</div>
-                      <h2 className="mt-4 font-display text-6xl leading-[0.85] md:text-[96px]">CHOOSE MODE</h2>
-                    </div>
+                    <h2 className="text-[28px] font-extrabold tracking-tight text-kiddo-navy">
+                      Choose a workspace
+                    </h2>
+                    <p className="mt-2 text-[15px] text-kiddo-muted">
+                      Where would you like to go?
+                    </p>
 
-                    <div className="grid gap-4">
+                    <div className="mt-7 grid gap-3">
                       <button
                         type="button"
                         onClick={() => handleRoleSelect('parent')}
-                        className="neo-shadow-black group flex items-center gap-5 border-4 border-black bg-white p-5 text-left text-black transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
+                        className="group flex items-center gap-4 rounded-2xl border-2 border-slate-200 bg-white p-5 text-left transition-all hover:border-kiddo-blue hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
-                        <div className="grid h-16 w-16 place-items-center border-4 border-black bg-[#ccff00]">
-                          <Users size={28} />
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-display text-4xl leading-[0.85]">PARENT</div>
-                          <div className="mt-2 font-label text-xs font-bold">APPROVE / CONFIGURE / TRACK</div>
-                        </div>
-                        <ChevronRight className="transition-transform group-hover:translate-x-1" />
+                        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-kiddo-sky/20 text-kiddo-blue">
+                          <Users className="h-6 w-6" />
+                        </span>
+                        <span className="flex-1">
+                          <span className="block text-lg font-extrabold text-kiddo-navy">Parent</span>
+                          <span className="text-[13px] font-semibold text-kiddo-muted">
+                            Approve, configure and track
+                          </span>
+                        </span>
+                        <ChevronRight className="text-kiddo-muted transition-transform group-hover:translate-x-1" />
                       </button>
 
                       <button
                         type="button"
                         onClick={() => handleRoleSelect('child')}
-                        className="neo-shadow-black group flex items-center gap-5 border-4 border-black bg-[#ccff00] p-5 text-left text-black transition-transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
+                        className="group flex items-center gap-4 rounded-2xl border-2 border-kiddo-blue bg-kiddo-sky/10 p-5 text-left transition-all hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
-                        <div className="grid h-16 w-16 place-items-center border-4 border-black bg-white font-label text-xs font-bold">
+                        <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-xs font-extrabold text-kiddo-blue">
                           {storedAvatar}
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-display text-4xl leading-[0.85]">{storedName}</div>
-                          <div className="mt-2 font-label text-xs font-bold">MISSIONS / STREAKS / REWARDS</div>
-                        </div>
-                        <ChevronRight className="transition-transform group-hover:translate-x-1" />
+                        </span>
+                        <span className="flex-1">
+                          <span className="block text-lg font-extrabold text-kiddo-navy">{storedName}</span>
+                          <span className="text-[13px] font-semibold text-kiddo-muted">
+                            Missions, streaks and rewards
+                          </span>
+                        </span>
+                        <ChevronRight className="text-kiddo-blue transition-transform group-hover:translate-x-1" />
                       </button>
                     </div>
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {/* Child hint (login step only) */}
+              {isLoginStep && (
+                <p className="mt-8 text-center text-[13px] leading-relaxed text-kiddo-muted">
+                  Is your child using KidDo? They sign in with their magic code{' '}
+                  <span className="font-semibold text-kiddo-navy">inside the app</span>.
+                </p>
+              )}
             </div>
-          </section>
-        </main>
+          </div>
+        </section>
       </div>
     </div>
   );

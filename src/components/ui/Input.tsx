@@ -1,27 +1,29 @@
-import React from 'react';
-import { cn } from '../../lib/utils';
+import * as React from "react";
+import { cn } from "@/src/lib/utils";
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: string;
 }
 
-export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, error, ...props }, ref) => {
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, error, ...props }, ref) => {
     return (
       <div className="space-y-1 w-full">
         <input
+          type={type}
           ref={ref}
           className={cn(
-            'flex h-12 w-full rounded-2xl border border-brand-navy/10 bg-white px-4 py-2 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-brand-blue/20 focus:border-brand-blue disabled:cursor-not-allowed disabled:opacity-50',
-            error && 'border-brand-orange focus:ring-brand-orange/20 focus:border-brand-orange',
+            "flex h-11 w-full rounded-xl border border-input bg-background px-4 py-2 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-kiddo-blue disabled:cursor-not-allowed disabled:opacity-50",
+            error && "border-kiddo-orange focus-visible:ring-kiddo-orange/30",
             className
           )}
           {...props}
         />
-        {error && <p className="text-xs font-bold text-brand-orange ml-1">{error}</p>}
+        {error && <p className="text-xs font-bold text-kiddo-orange ml-1">{error}</p>}
       </div>
     );
   }
 );
+Input.displayName = "Input";
 
-Input.displayName = 'Input';
+export { Input };

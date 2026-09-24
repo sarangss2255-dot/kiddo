@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useKiddoApp, Task } from './KiddoApp';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -10,13 +10,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { cn } from '../../../lib/utils';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 
 export function DashboardChild() {
   const { 
     tasks, completeTask, stars, 
-    streak, level, childName, childAvatar, achievements 
+    streak, level, childName, childAvatar, achievements,
+    wakeUpSettings, wakeUpCompletedToday, lastWakeUpReward, completeWakeUp, isTodaySchoolDay
   } = useKiddoApp();
+
+  const [showWakeUpReward, setShowWakeUpReward] = useState(false);
+  const [wakeUpResult, setWakeUpResult] = useState<{ points: number; bracket: string } | null>(null);
 
   // Child's missions for today
   const todoTasks = tasks.filter(t => t.status === 'todo');
@@ -26,6 +30,34 @@ export function DashboardChild() {
   // XP Progress calculation (next level at 100 stars intervals)
   const xpCurrent = stars % 100;
   const xpTarget = 100;
+
+  const handleWakeUp = () => {
+    if (wakeUpCompletedToday) return;
+    
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    
+    let points: number;
+    let bracket: string;
+    
+    if (hours < 4 || (hours === 4 && minutes <= 30)) {
+      points = 30; bracket = 'before_430';
+    } else if (hours < 5 || (hours === 5 && minutes <= 30)) {
+      points = 20; bracket = 'before_530';
+    } else if (hours < 6 || (hours === 6 && minutes <= 30)) {
+      points = 10; bracket = 'before_630';
+    } else {
+      points = 0; bracket = 'after_630';
+    }
+    
+    setWakeUpResult({ points, bracket });
+    setShowWakeUpReward(true);
+    
+    setTimeout(() => setShowWakeUpReward(false), 3000);
+    
+    completeWakeUp();
+  };
 
   return (
     <div className="space-y-10 pb-12">
@@ -112,6 +144,147 @@ export function DashboardChild() {
         </div>
       </section>
 
+      {/* WAKE UP SECTION */}
+      <section className="space-y-4">
+        <div className={cn(
+          "relative overflow-hidden rounded-[2rem] p-8 border-2 transition-all",
+          wakeUpCompletedToday 
+            ? "bg-gradient-to-br from-brand-orange/10 to-brand-yellow/10 border-brand-orange/20" 
+            : "bg-gradient-to-br from-brand-blue/5 to-brand-mint/5 border-brand-blue/10"
+        )}>
+          <div className="flex items-center justify-between relative z-10">
+            <div className="flex items-center gap-6">
+              <motion.div 
+                animate={!wakeUpCompletedToday ? { rotate: [0, -10, 10, -10, 0] } : {}}
+                transition={{ repeat: Infinity, duration: 2 }}
+                className="w-20 h-20 bg-white rounded-[2rem] flex items-center justify-center text-5xl shadow-sm"
+              >
+                {wakeUpCompletedToday ? '☀️' : '🌅'}
+              </motion.div>
+              <div>
+                <h3 className="text-2xl font-kids font-bold">
+                  {wakeUpCompletedToday ? 'Good Morning!' : 'Rise & Shine!'}
+                </h3>
+                <p className="text-sm text-brand-muted font-medium mt-1">
+                  {wakeUpCompletedToday 
+                    ? `You earned ${lastWakeUpReward?.rewardPoints ?? 0} points today!` 
+                    : `Target: Wake up by ${wakeUpSettings.targetTime}`
+                  }
+                </p>
+                <Badge variant="default" className="mt-2 bg-white/50 border-none font-bold uppercase tracking-widest text-[10px]">
+                  {wakeUpCompletedToday ? '✓ Completed' : 'Mandatory Task'}
+                </Badge>
+              </div>
+            </div>
+            {!wakeUpCompletedToday && (
+              <Button 
+                onClick={handleWakeUp}
+                className="h-14 px-8 rounded-2xl bg-brand-orange hover:bg-brand-orange/90 text-white font-bold text-base shadow-lg shadow-brand-orange/20"
+              >
+                I'm Awake!
+              </Button>
+            )}
+          </div>
+          
+          {/* Reward brackets hint */}
+          {!wakeUpCompletedToday && (
+            <div className="mt-6 grid grid-cols-4 gap-3">
+              {[
+                { time: '3:30–4:30', pts: 30, color: 'bg-brand-mint' },
+                { time: '4:31–5:30', pts: 20, color: 'bg-brand-blue' },
+                { time: '5:31–6:30', pts: 10, color: 'bg-brand-orange/60' },
+                { time: 'After 6:30', pts: 0, color: 'bg-slate-200' },
+              ].map((bracket) => (
+                <div key={bracket.pts} className={cn(
+                  "p-3 rounded-xl text-center border border-brand-navy/5",
+                  bracket.pts === 30 ? "bg-brand-mint/5" : 
+                  bracket.pts === 20 ? "bg-brand-blue/5" :
+                  bracket.pts === 10 ? "bg-brand-orange/5" : "bg-slate-50"
+                )}>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-brand-muted">{bracket.time}</div>
+                  <div className="text-lg font-bold mt-1">
+                    +{bracket.pts}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* WAKE UP REWARD ANIMATION */}
+        <AnimatePresence>
+          {showWakeUpReward && wakeUpResult && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5, y: 50 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.5, y: -50 }}
+              transition={{ type: "spring", damping: 15, stiffness: 200 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-brand-navy/60 backdrop-blur-sm p-6"
+              onClick={() => setShowWakeUpReward(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                className="bg-white rounded-[3rem] p-10 text-center max-w-sm w-full shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <motion.div
+                  initial={{ rotate: -20, scale: 0 }}
+                  animate={{ rotate: 0, scale: 1 }}
+                  transition={{ type: "spring", damping: 12, delay: 0.2 }}
+                  className="text-8xl mb-6"
+                >
+                  {wakeUpResult.points >= 30 ? '🌟' : wakeUpResult.points >= 20 ? '✨' : wakeUpResult.points >= 10 ? '☀️' : '⏰'}
+                </motion.div>
+                <motion.h3
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-3xl font-kids font-bold"
+                >
+                  {wakeUpResult.points >= 30 ? 'Early Bird!' : wakeUpResult.points >= 20 ? 'Great Job!' : wakeUpResult.points >= 10 ? 'Good Morning!' : 'Try Again Tomorrow'}
+                </motion.h3>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.6, type: "spring" }}
+                  className="my-6"
+                >
+                  <span className="text-6xl font-kids font-bold text-brand-yellow">
+                    +{wakeUpResult.points}
+                  </span>
+                  <span className="text-2xl font-kids font-bold text-brand-muted ml-2">points</span>
+                </motion.div>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                  className="text-sm text-brand-muted font-medium mb-6"
+                >
+                  {wakeUpResult.points >= 30 ? 'Woke up bright and early!' : 
+                   wakeUpResult.points >= 20 ? 'Great wake-up time!' :
+                   wakeUpResult.points >= 10 ? 'On time!' : 'Set an earlier alarm tomorrow!'}
+                </motion.p>
+                {wakeUpResult.points > 0 && (
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: '100%' }}
+                    transition={{ delay: 1, duration: 1 }}
+                    className="h-2 bg-gradient-to-r from-brand-yellow to-brand-orange rounded-full mx-auto max-w-[80%]"
+                  />
+                )}
+                <Button 
+                  onClick={() => setShowWakeUpReward(false)}
+                  className="mt-8 px-8 h-12 rounded-2xl bg-brand-navy"
+                >
+                  Awesome!
+                </Button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </section>
+
       {/* MISSION CONTROL TABS/SECTION */}
       <section className="space-y-6">
         <div className="flex items-center justify-between">
@@ -194,12 +367,12 @@ export function DashboardChild() {
                 Great job, explorer! You've finished all your missions for now. Go play some games or check out the star shop!
               </p>
               <div className="flex gap-4 mt-8">
-                <Link to="/app/learning">
+                <Link href="/app/learning">
                   <Button variant="outline" className="border-2 h-12 px-6">
                     <BookOpen size={18} className="mr-2" /> Play Games
                   </Button>
                 </Link>
-                <Link to="/app/rewards">
+                <Link href="/app/rewards">
                   <Button variant="accent" className="h-12 px-6">
                     <ShoppingBag size={18} className="mr-2" /> Star Shop
                   </Button>
@@ -244,7 +417,7 @@ export function DashboardChild() {
             <Play className="text-brand-blue fill-brand-blue" size={24} />
             Quick Adventures
           </h2>
-          <Link to="/app/learning" className="block">
+          <Link href="/app/learning" className="block">
             <motion.div
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}

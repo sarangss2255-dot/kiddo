@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useKiddoApp } from './KiddoApp';
-import { Settings, User, Bell, Shield, Smartphone, Heart, Sparkles, RefreshCw, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { Settings, User, Bell, Shield, Smartphone, Heart, Sparkles, RefreshCw, ChevronRight, CheckCircle2, Clock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
@@ -8,7 +8,7 @@ import { Input } from '../../../components/ui/Input';
 import { cn } from '../../../lib/utils';
 
 export function SettingsSection() {
-  const { childName, childAvatar, resetData } = useKiddoApp();
+  const { childName, childAvatar, resetData, wakeUpSettings, setWakeUpTargetTime } = useKiddoApp();
   
   // Custom states
   const [parentName, setParentName] = useState('Sarah Smith');
@@ -150,6 +150,57 @@ export function SettingsSection() {
                   </div>
                 </label>
               ))}
+            </div>
+          </Card>
+
+          {/* WAKE-UP SETTINGS */}
+          <Card className="p-8 border-brand-navy/5 shadow-sm">
+            <h3 className="text-2xl font-kids font-bold flex items-center gap-3 mb-8 text-brand-navy">
+              <Clock size={24} className="text-brand-orange" />
+              Wake Up Settings
+            </h3>
+            <div className="space-y-6">
+              <div className="p-5 bg-brand-bg rounded-2xl border border-brand-navy/5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm font-bold text-brand-navy block">Target Wake-Up Time</span>
+                    <span className="text-xs text-brand-muted font-medium">Child earns points based on how early they wake up</span>
+                  </div>
+                  <input
+                    type="time"
+                    value={wakeUpSettings.targetTime}
+                    onChange={(e) => setWakeUpTargetTime(e.target.value)}
+                    className="h-12 px-4 rounded-xl border-2 border-brand-navy/5 bg-white font-bold text-lg focus:outline-none focus:border-brand-orange"
+                  />
+                </div>
+              </div>
+
+              <div className="p-5 bg-brand-bg rounded-2xl border border-brand-navy/5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm font-bold text-brand-navy block">Wake Up Task</span>
+                    <span className="text-xs text-brand-muted font-medium">This task is mandatory and cannot be removed</span>
+                  </div>
+                  <Badge variant="info" className="px-3 py-1">Always Active</Badge>
+                </div>
+              </div>
+
+              <div className="bg-brand-orange/5 rounded-2xl p-5 border border-brand-orange/10">
+                <h4 className="font-bold text-sm text-brand-navy mb-3">Reward Brackets</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { time: '3:30 AM – 4:30 AM', pts: '+30', bg: 'bg-brand-mint/10 text-brand-mint' },
+                    { time: '4:31 AM – 5:30 AM', pts: '+20', bg: 'bg-brand-blue/10 text-brand-blue' },
+                    { time: '5:31 AM – 6:30 AM', pts: '+10', bg: 'bg-brand-orange/10 text-brand-orange' },
+                    { time: 'After 6:30 AM', pts: '+0', bg: 'bg-slate-100 text-brand-muted' },
+                  ].map((b) => (
+                    <div key={b.pts} className={`p-3 rounded-xl ${b.bg} font-bold text-center`}>
+                      <div className="text-[10px] uppercase tracking-widest opacity-70">{b.time}</div>
+                      <div className="text-xl mt-1">{b.pts}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </Card>
 

@@ -95,6 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (typeof idToken === 'string' && idToken.length > 20) {
             const payload = await api.post('/auth/firebase', { idToken });
             await api.setToken(payload.accessToken);
+            await refreshProfile();
           } else {
             console.error('No valid idToken obtained from Firebase:', idToken);
             await api.setToken(null);
@@ -102,6 +103,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (err) {
           console.error('Error obtaining Firebase idToken:', err);
           await api.setToken(null);
+        } finally {
+          setLoading(false);
         }
       } else {
         // Clear everything if not authenticated
@@ -114,12 +117,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => unsubscribeAuth();
   }, []);
-
-  useEffect(() => {
-    if (user) {
-      refreshProfile().finally(() => setLoading(false));
-    }
-  }, [user]);
 
   return (
     <AuthContext.Provider value={{ user, profile, loading, isAuthReady, refreshProfile }}>

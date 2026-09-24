@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
 import firebaseConfig from './firebase-applet-config.json';
 
 // Initialize Firebase
@@ -63,19 +63,3 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   throw new Error(JSON.stringify(errInfo));
 }
 
-// Connection Test
-async function testConnection() {
-  try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error('Please check your Firebase configuration. The client is offline.');
-    } else if (
-      error instanceof Error &&
-      (firebaseConfig.appId.includes('REPLACE_WITH_') || firebaseConfig.apiKey.includes('REPLACE_WITH_'))
-    ) {
-      console.error('Firebase web config is still using placeholders. Add the web app values from the kiddo-bf68d Firebase project.');
-    }
-  }
-}
-testConnection();

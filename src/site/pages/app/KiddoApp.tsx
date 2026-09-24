@@ -1,5 +1,6 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
-import { Route, Routes, useNavigate, Link, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Trophy, BookOpen, BarChart3, Settings, ShieldAlert, 
@@ -67,6 +68,37 @@ export interface AppContextType {
   achievements: Achievement[];
   notifications: any[];
   resetData: () => void;
+  weeklySchedule: WeeklySchedule;
+  setWeeklySchedule: (s: WeeklySchedule) => void;
+  updateScheduleDay: (day: keyof WeeklySchedule, value: boolean) => void;
+  wakeUpSettings: WakeUpSettings;
+  setWakeUpTargetTime: (time: string) => void;
+  wakeUpCompletedToday: boolean;
+  lastWakeUpReward: WakeUpCompletion | null;
+  completeWakeUp: () => WakeUpCompletion;
+  isTodaySchoolDay: boolean;
+}
+
+export interface WeeklySchedule {
+  monday: boolean;
+  tuesday: boolean;
+  wednesday: boolean;
+  thursday: boolean;
+  friday: boolean;
+  saturday: boolean;
+  sunday: boolean;
+}
+
+export interface WakeUpSettings {
+  targetTime: string;
+  mandatory: boolean;
+}
+
+export interface WakeUpCompletion {
+  date: string;
+  completedAt: string;
+  rewardPoints: number;
+  rewardBracket: string;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -101,9 +133,19 @@ const defaultAchievements: Achievement[] = [
   { id: 'a4', title: 'Streak Master', desc: 'Reach a 7-day streak', icon: '🔥', unlocked: true }
 ];
 
+const defaultWeeklySchedule: WeeklySchedule = {
+  monday: true, tuesday: true, wednesday: true,
+  thursday: true, friday: true, saturday: false, sunday: false,
+};
+
+const defaultWakeUpSettings: WakeUpSettings = {
+  targetTime: '06:30',
+  mandatory: true,
+};
+
 export function KiddoApp() {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
+  const pathname = usePathname();
   const [role, setRoleState] = useState<'parent' | 'child'>('parent');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [rewards, setRewards] = useState<Reward[]>([]);
@@ -117,10 +159,18 @@ export function KiddoApp() {
   const [gateAnswer, setGateAnswer] = useState('');
   const [gateNum1, setGateNum1] = useState(0);
   const [gateNum2, setGateNum2] = useState(0);
+  const [weeklySchedule, setWeeklyScheduleState] = useState<WeeklySchedule>(defaultWeeklySchedule);
+  const [wakeUpSettings, setWakeUpSettingsState] = useState<WakeUpSettings>(defaultWakeUpSettings);
+  const [wakeUpCompletedToday, setWakeUpCompletedToday] = useState(false);
+  const [lastWakeUpReward, setLastWakeUpReward] = useState<WakeUpCompletion | null>(null);
 
   // Child Profile Onboarding Details
   const childName = localStorage.getItem('kiddo_onboarding_child_name') || 'Leo';
   const childAvatar = localStorage.getItem('kiddo_onboarding_child_avatar') || '🦊';
+
+  const daysOfWeek: (keyof WeeklySchedule)[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const todayName = daysOfWeek[new Date().getDay()];
+  const isTodaySchoolDay = weeklySchedule[todayName];
 
   // Load / Sync State
   useEffect(() => {
@@ -147,14 +197,37 @@ export function KiddoApp() {
 
     if (cachedRole) {
       setRoleState(cachedRole);
-      if (location.pathname === '/app' || location.pathname === '/app/') {
-        navigate(`/app/${cachedRole}`);
+      if (pathname === '/app' || pathname === '/app/') {
+        router.push(`/app/${cachedRole}`);
       }
     } else {
       localStorage.setItem('kiddo_user_role', 'parent');
       setRoleState('parent');
-      if (location.pathname === '/app' || location.pathname === '/app/') {
-        navigate('/app/parent');
+      if (pathname === '/app' || pathname === '/app/') {
+        router.push('/app/parent');
+      }
+    }
+
+    const cachedSchedule = localStorage.getItem('k_weekly_schedule');
+    if (cachedSchedule) setWeeklyScheduleState(JSON.parse(cachedSchedule));
+
+    const cachedWakeUpSettings = localStorage.getItem('k_wake_up_settings');
+    if (cachedWakeUpSettings) setWakeUpSettingsState(JSON.parse(cachedWakeUpSettings));
+
+    const cachedWakeUpCompleted = localStorage.getItem('k_wake_up_completed');
+    if (cachedWakeUpCompleted) {
+      const completedDate = new Date(cachedWakeUpCompleted);
+      const today = new Date();
+      if (completedDate.toDateString() === today.toDateString()) {
+        setWakeUpCompletedToday(true);
+      }
+    }
+
+    const cachedWakeUpReward = localStorage.getItem('k_last_wake_up_reward');
+    if (cachedWakeUpReward) {
+      const reward = JSON.parse(cachedWakeUpReward);
+      if (reward.date === new Date().toISOString().split('T')[0]) {
+        setLastWakeUpReward(reward);
       }
     }
   }, []);
@@ -168,7 +241,7 @@ export function KiddoApp() {
   const setRole = (newRole: 'parent' | 'child') => {
     setRoleState(newRole);
     localStorage.setItem('kiddo_user_role', newRole);
-    navigate(`/app/${newRole}`);
+    router.push(`/app/${newRole}`);
   };
 
   const addTask = (task: Omit<Task, 'id' | 'status'>) => {
@@ -261,6 +334,63 @@ export function KiddoApp() {
     addNotification('Data Reset', 'Demo environment restored.');
   };
 
+  const setWeeklySchedule = (s: WeeklySchedule) => {
+    setWeeklyScheduleState(s);
+    localStorage.setItem('k_weekly_schedule', JSON.stringify(s));
+  };
+
+  const updateScheduleDay = (day: keyof WeeklySchedule, value: boolean) => {
+    const updated = { ...weeklySchedule, [day]: value };
+    setWeeklyScheduleState(updated);
+    localStorage.setItem('k_weekly_schedule', JSON.stringify(updated));
+  };
+
+  const setWakeUpTargetTime = (time: string) => {
+    const updated = { ...wakeUpSettings, targetTime: time };
+    setWakeUpSettingsState(updated);
+    localStorage.setItem('k_wake_up_settings', JSON.stringify(updated));
+  };
+
+  const completeWakeUp = (): WakeUpCompletion => {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    
+    // Calculate reward bracket
+    let rewardPoints: number;
+    let rewardBracket: string;
+    
+    if (hours < 4 || (hours === 4 && minutes <= 30)) {
+      rewardPoints = 30;
+      rewardBracket = 'before_430';
+    } else if (hours < 5 || (hours === 5 && minutes <= 30)) {
+      rewardPoints = 20;
+      rewardBracket = 'before_530';
+    } else if (hours < 6 || (hours === 6 && minutes <= 30)) {
+      rewardPoints = 10;
+      rewardBracket = 'before_630';
+    } else {
+      rewardPoints = 0;
+      rewardBracket = 'after_630';
+    }
+
+    const result: WakeUpCompletion = {
+      date: now.toISOString().split('T')[0],
+      completedAt: now.toISOString(),
+      rewardPoints,
+      rewardBracket,
+    };
+
+    setLastWakeUpReward(result);
+    setWakeUpCompletedToday(true);
+    setStars(prev => prev + rewardPoints);
+    localStorage.setItem('k_stars', String(stars + rewardPoints));
+    localStorage.setItem('k_wake_up_completed', now.toISOString());
+    localStorage.setItem('k_last_wake_up_reward', JSON.stringify(result));
+
+    return result;
+  };
+
   const openParentGate = () => {
     const n1 = Math.floor(Math.random() * 8) + 2;
     const n2 = Math.floor(Math.random() * 8) + 2;
@@ -298,7 +428,11 @@ export function KiddoApp() {
     <AppContext.Provider value={{
       role, setRole, tasks, addTask, completeTask, approveTask, rejectTask,
       rewards, claimReward, approveRewardClaim, stars, addStars, subtractStars,
-      streak, level, childName, childAvatar, achievements, notifications, resetData
+      streak, level, childName, childAvatar, achievements, notifications, resetData,
+      weeklySchedule, setWeeklySchedule, updateScheduleDay,
+      wakeUpSettings, setWakeUpTargetTime,
+      wakeUpCompletedToday, lastWakeUpReward, completeWakeUp,
+      isTodaySchoolDay
     }}>
       <div className="flex min-h-screen bg-brand-bg text-brand-navy font-sans antialiased overflow-hidden">
         
@@ -367,12 +501,12 @@ export function KiddoApp() {
             <nav className="flex-1 space-y-2 overflow-y-auto pr-2 custom-scrollbar">
               <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-brand-muted px-4 mb-4">Navigation</span>
               {sidebarLinks.map((link) => {
-                const isActive = location.pathname === link.to;
+                const isActive = pathname === link.to;
                 const Icon = link.icon;
                 return (
                   <Link
                     key={link.to}
-                    to={link.to}
+                    href={link.to}
                     onClick={() => setSidebarOpen(false)}
                     className={cn(
                       "flex items-center justify-between group px-4 py-3.5 rounded-2xl transition-all duration-200",
@@ -416,7 +550,7 @@ export function KiddoApp() {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => navigate('/')}
+                onClick={() => router.push('/')}
                 className="w-full h-10 rounded-xl font-black uppercase tracking-widest text-[10px]"
               >
                 <LogOut size={14} /> Exit App
@@ -461,21 +595,27 @@ export function KiddoApp() {
             <div className="max-w-6xl mx-auto w-full">
               <AnimatePresence mode="wait">
                 <motion.div
-                  key={location.pathname}
+                  key={pathname}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.3, ease: "easeOut" }}
                 >
-                  <Routes location={location} key={location.pathname}>
-                    <Route path="/parent" element={<DashboardParent />} />
-                    <Route path="/child" element={<DashboardChild />} />
-                    <Route path="/tasks" element={<TaskManagement />} />
-                    <Route path="/rewards" element={<RewardsMarketplace />} />
-                    <Route path="/learning" element={<LearningSection />} />
-                    <Route path="/analytics" element={<AnalyticsSection />} />
-                    <Route path="/settings" element={<SettingsSection />} />
-                  </Routes>
+                  {pathname === '/app/child' ? (
+                    <DashboardChild />
+                  ) : pathname === '/app/tasks' ? (
+                    <TaskManagement />
+                  ) : pathname === '/app/rewards' ? (
+                    <RewardsMarketplace />
+                  ) : pathname === '/app/learning' ? (
+                    <LearningSection />
+                  ) : pathname === '/app/analytics' ? (
+                    <AnalyticsSection />
+                  ) : pathname === '/app/settings' ? (
+                    <SettingsSection />
+                  ) : (
+                    <DashboardParent />
+                  )}
                 </motion.div>
               </AnimatePresence>
             </div>
