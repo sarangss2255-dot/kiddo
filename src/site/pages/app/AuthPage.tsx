@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -48,6 +50,8 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
   const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [parentName, setParentName] = useState('');
+  const [familyName, setFamilyName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState(['', '', '', '']);
   const [childName, setChildName] = useState('');
@@ -64,7 +68,7 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
     ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } }
     : { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -16 } };
 
-  const finishLogin = async (payload: any) => {
+  const finishLogin = async (payload: any, options: { onboarding?: boolean } = {}) => {
     await api.setToken(payload.accessToken);
     localStorage.setItem('kiddo_auth_user', JSON.stringify(payload.user));
 
@@ -80,14 +84,51 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
     }
 
     localStorage.setItem('kiddo_user_role', 'parent');
+
+    if (options.onboarding) {
+      setStep('onboarding');
+      return;
+    }
+
     router.push('/app/parent');
   };
 
   const handleAuthSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!email || !password) return;
+
     if (mode === 'signup') {
-      setStep('onboarding');
+      const trimmedParentName = parentName.trim();
+      const trimmedFamilyName = familyName.trim();
+
+      if (trimmedParentName.length < 2) {
+        setError('Please enter your name (at least 2 characters).');
+        return;
+      }
+      if (trimmedFamilyName.length < 2) {
+        setError('Please enter a family name (at least 2 characters).');
+        return;
+      }
+      if (password.length < 8) {
+        setError('Password must be at least 8 characters.');
+        return;
+      }
+
+      setLoading(true);
+      setError('');
+      try {
+        const payload = await api.post('/auth/parent/register', {
+          firstName: trimmedParentName,
+          familyName: trimmedFamilyName,
+          email: email.trim(),
+          password,
+        });
+        await finishLogin(payload, { onboarding: true });
+      } catch (err: any) {
+        setError(err?.message || 'Unable to create your family account. Please try again.');
+      } finally {
+        setLoading(false);
+      }
       return;
     }
 
@@ -121,11 +162,11 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
           ? {
               firstName,
               lastName: lastNameParts.join(' '),
-              familyName: `${firstName}'s Family`,
+              familyName: familyName.trim() || `${firstName}'s Family`,
             }
           : {}),
       });
-      await finishLogin(payload);
+      await finishLogin(payload, { onboarding: mode === 'signup' });
     } catch (err: any) {
       setError(err?.message || 'Google sign-in failed. Check Firebase and backend configuration.');
     } finally {
@@ -157,11 +198,35 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
     setGoals((current) => (current.includes(goalId) ? current.filter((id) => id !== goalId) : [...current, goalId]));
   };
 
-  const handleOnboardingSubmit = () => {
+  const handleOnboardingSubmit = async () => {
     if (!childName) return;
-    localStorage.setItem('kiddo_onboarding_child_name', childName);
-    localStorage.setItem('kiddo_onboarding_child_age', childAge);
-    localStorage.setItem('kiddo_onboarding_child_avatar', selectedAvatar);
+
+    setLoading(true);
+    setError('');
+    try {
+      const age = Number(childAge);
+      const standard =
+        Number.isFinite(age) && age > 0 ? Math.min(12, Math.max(1, Math.round(age) - 5)) : 1;
+
+      await api.post('/auth/children', {
+        firstName: childName.trim(),
+        avatar: selectedAvatar,
+        standard,
+      });
+
+      localStorage.setItem('kiddo_onboarding_child_name', childName);
+      localStorage.setItem('kiddo_onboarding_child_age', childAge);
+      localStorage.setItem('kiddo_onboarding_child_avatar', selectedAvatar);
+      setStep('role');
+    } catch (err: any) {
+      setError(err?.message || 'Unable to add your child profile. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSkipOnboarding = () => {
+    setError('');
     setStep('role');
   };
 
@@ -286,17 +351,48 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                     {/* Header */}
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-kiddo-sky/20 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wide text-kiddo-blue">
                       <Sparkles className="h-3.5 w-3.5" />
-                      Welcome back
+                      {mode === 'signup' ? 'Get started' : 'Welcome back'}
                     </span>
                     <h2 className="mt-5 text-[32px] font-extrabold leading-tight tracking-tight text-kiddo-navy">
-                      Log in to KidDo
+                      {mode === 'signup' ? 'Create your family account' : 'Log in to KidDo'}
                     </h2>
                     <p className="mt-2.5 text-[15px] leading-relaxed text-kiddo-muted">
-                      Enter your family dashboard, child missions, and the approval loop.
+                      {mode === 'signup'
+                        ? 'Set up your family, add your first child, and start building better habits together.'
+                        : 'Enter your family dashboard, child missions, and the approval loop.'}
                     </p>
 
                     {/* Form */}
                     <form onSubmit={handleAuthSubmit} className="mt-8 space-y-5" noValidate={false}>
+                      {mode === 'signup' ? (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="auth-name">Your name</Label>
+                            <Input
+                              id="auth-name"
+                              autoComplete="name"
+                              required
+                              value={parentName}
+                              onChange={(event) => setParentName(event.target.value)}
+                              placeholder="Sarah"
+                              className="h-12"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="auth-family">Family name</Label>
+                            <Input
+                              id="auth-family"
+                              autoComplete="organization"
+                              required
+                              value={familyName}
+                              onChange={(event) => setFamilyName(event.target.value)}
+                              placeholder="The Johnsons"
+                              className="h-12"
+                            />
+                          </div>
+                        </>
+                      ) : null}
+
                       <div className="space-y-2">
                         <Label htmlFor="auth-email">Email</Label>
                         <div className="relative">
@@ -317,15 +413,22 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <Label htmlFor="auth-password">Password</Label>
-                          <span className="text-[13px] font-semibold text-kiddo-muted">Forgot?</span>
+                          {mode === 'login' ? (
+                            <span className="text-[13px] font-semibold text-kiddo-muted">Forgot?</span>
+                          ) : (
+                            <span className="text-[13px] font-semibold text-kiddo-muted">
+                              Min. 8 characters
+                            </span>
+                          )}
                         </div>
                         <div className="relative">
                           <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-kiddo-muted" />
                           <Input
                             id="auth-password"
                             type={showPassword ? 'text' : 'password'}
-                            autoComplete="current-password"
+                            autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                             required
+                            minLength={mode === 'signup' ? 8 : 6}
                             value={password}
                             onChange={(event) => setPassword(event.target.value)}
                             placeholder="Password"
@@ -356,7 +459,13 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                         disabled={loading}
                         className="w-full"
                       >
-                        {loading ? 'Signing in...' : 'Sign in'}
+                        {loading
+                          ? mode === 'signup'
+                            ? 'Creating account...'
+                            : 'Signing in...'
+                          : mode === 'signup'
+                            ? 'Create account'
+                            : 'Sign in'}
                         {!loading ? <ArrowRight /> : null}
                       </Button>
                     </form>
@@ -376,21 +485,39 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                       disabled={loading}
                     >
                       <Shield className="h-4 w-4 text-kiddo-blue" />
-                      Continue with Google
+                      {mode === 'signup' ? 'Sign up with Google' : 'Continue with Google'}
                     </Button>
 
                     <p className="mt-7 text-center text-[15px] text-kiddo-muted">
-                      New to KidDo?{' '}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMode('signup');
-                          setError('');
-                        }}
-                        className="font-bold text-kiddo-blue underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
-                      >
-                        Create a family account
-                      </button>
+                      {mode === 'signup' ? (
+                        <>
+                          Already have a family account?{' '}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMode('login');
+                              setError('');
+                            }}
+                            className="font-bold text-kiddo-blue underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                          >
+                            Sign in
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          New to KidDo?{' '}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMode('signup');
+                              setError('');
+                            }}
+                            className="font-bold text-kiddo-blue underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                          >
+                            Create a family account
+                          </button>
+                        </>
+                      )}
                     </p>
                   </motion.div>
                 )}
@@ -520,15 +647,32 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                       </div>
                     </div>
 
+                    {error ? (
+                      <Alert variant="destructive" className="mt-6">
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    ) : null}
+
                     <Button
                       type="button"
                       size="xl"
                       className="mt-7 w-full"
                       onClick={handleOnboardingSubmit}
-                      disabled={!childName}
+                      isLoading={loading}
+                      disabled={!childName || loading}
                     >
-                      Continue to workspace
-                      <ArrowRight />
+                      {loading ? 'Adding child...' : 'Continue to workspace'}
+                      {!loading ? <ArrowRight /> : null}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="mt-3 w-full"
+                      onClick={handleSkipOnboarding}
+                      disabled={loading}
+                    >
+                      Skip for now
                     </Button>
                   </motion.div>
                 )}

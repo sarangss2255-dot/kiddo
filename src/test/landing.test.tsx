@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, beforeAll, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { PublicLandingPage } from '../site/pages/PublicLandingPage';
 import { AuthPage } from '../site/pages/app/AuthPage';
 import { DownloadPage } from '../site/pages/DownloadPage';
@@ -93,6 +93,28 @@ describe('PublicLandingPage', () => {
     expect(screen.getByText(/Back to home/i)).toBeTruthy();
     // Real KidDo dashboard rendered on the brand side
     expect(screen.getAllByText(/Daily Mission/i).length).toBeGreaterThan(0);
+  });
+
+  it('renders the family signup screen wired for Google auth', () => {
+    render(<AuthPage initialMode="signup" />);
+
+    expect(screen.getByText('Create your family account')).toBeTruthy();
+    expect(screen.getByLabelText('Your name')).toBeTruthy();
+    expect(screen.getByLabelText('Family name')).toBeTruthy();
+    expect(screen.getByLabelText('Email')).toBeTruthy();
+    expect(screen.getByText('Create account')).toBeTruthy();
+    expect(screen.getByText('Sign up with Google')).toBeTruthy();
+    expect(screen.getByText(/Already have a family account/i)).toBeTruthy();
+  });
+
+  it('switches from login to the family signup view', () => {
+    render(<AuthPage />);
+
+    fireEvent.click(screen.getByText('Create a family account'));
+
+    expect(screen.getByText('Create your family account')).toBeTruthy();
+    expect(screen.getByText('Create account')).toBeTruthy();
+    expect(screen.getByText('Sign up with Google')).toBeTruthy();
   });
 
   it('renders the download page with both app downloads', () => {
