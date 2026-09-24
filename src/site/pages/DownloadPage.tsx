@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { Apple, Check, Download, QrCode, ShieldCheck, Smartphone, TabletSmartphone } from 'lucide-react';
+import { Apple, Check, Download, QrCode, ShieldCheck, Smartphone, TabletSmartphone, Users } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
+import { CHILD_APP_APK_URL, PARENT_APP_APK_URL } from '../../lib/site-config';
 import { Reveal } from '../components/Reveal';
 
 export function DownloadPage() {
@@ -36,22 +37,52 @@ export function DownloadPage() {
                 <span className="block text-kiddo-blue">for your family.</span>
               </h1>
               <p className="mx-auto mt-5 max-w-[560px] text-[17px] leading-relaxed text-kiddo-muted">
-                Download the Android package, install it, and sign in with your family
-                account. KidDo runs on phones, tablets, and Chromebooks.
+                Download the app for your child or for yourself, install it, and sign in
+                with your family account. KidDo runs on phones, tablets, and Chromebooks.
               </p>
 
-              <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                <Button asChild size="xl" className="w-full sm:w-auto">
-                  <a href="/kiddo-app.apk" download>
-                    <Download />
-                    Download APK
-                  </a>
-                </Button>
-                <span className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-4 text-base font-bold text-kiddo-muted">
-                  <Apple className="h-5 w-5" />
-                  iOS — coming soon
-                </span>
+              <div className="mx-auto mt-9 grid max-w-[720px] gap-4 sm:grid-cols-2">
+                <Card className="border-slate-200/80 bg-white text-left shadow-[0_18px_45px_-20px_rgba(27,58,75,0.18)]">
+                  <CardContent className="p-6">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-kiddo-orange/15 text-kiddo-orange">
+                      <Smartphone className="h-5 w-5" />
+                    </span>
+                    <h2 className="mt-4 text-lg font-extrabold text-kiddo-navy">Child App</h2>
+                    <p className="mt-1.5 text-[14px] leading-relaxed text-kiddo-muted">
+                      Missions, streaks, mini games and rewards for your child.
+                    </p>
+                    <Button asChild size="lg" variant="accent" className="mt-5 w-full">
+                      <a href={CHILD_APP_APK_URL} download>
+                        <Download />
+                        Download Child App
+                      </a>
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-slate-200/80 bg-white text-left shadow-[0_18px_45px_-20px_rgba(27,58,75,0.18)]">
+                  <CardContent className="p-6">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-kiddo-sky/20 text-kiddo-blue">
+                      <Users className="h-5 w-5" />
+                    </span>
+                    <h2 className="mt-4 text-lg font-extrabold text-kiddo-navy">Parent App</h2>
+                    <p className="mt-1.5 text-[14px] leading-relaxed text-kiddo-muted">
+                      Approvals, routines, school progress and parent controls.
+                    </p>
+                    <Button asChild size="lg" className="mt-5 w-full">
+                      <a href={PARENT_APP_APK_URL} download>
+                        <Download />
+                        Download Parent App
+                      </a>
+                    </Button>
+                  </CardContent>
+                </Card>
               </div>
+
+              <p className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-kiddo-muted">
+                <Apple className="h-4 w-4" />
+                iOS — coming soon
+              </p>
             </Reveal>
           </section>
 
@@ -78,7 +109,7 @@ export function DownloadPage() {
                   <span className="text-sm font-bold uppercase tracking-wide text-kiddo-blue">Install flow</span>
                   <div className="mt-6 space-y-4">
                     {[
-                      'Download the Android APK.',
+                      'Pick the child or parent app and download the APK.',
                       'Allow installation when Android prompts.',
                       'Sign in with the family account and select the workspace.',
                     ].map((item, index) => (

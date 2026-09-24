@@ -80,7 +80,7 @@ export function LoginPage() {
                     type="email"
                     autoComplete="email"
                     required
-                    placeholder="admin@kiddoapp.in"
+                    placeholder="admin@your-domain.com"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     className="pl-11 h-12 rounded-2xl border-slate-200"

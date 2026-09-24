@@ -1,8 +1,10 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { PhoneDashboard } from './PhoneDashboard';
-import { Compass, UserCircle, Gift, Trophy, Flame, Gamepad2 } from 'lucide-react';
+import { Compass, UserCircle, Gift, Trophy, Flame, Gamepad2, Download } from 'lucide-react';
 import { Badge } from '@/src/components/ui/Badge';
+import { Button } from '@/src/components/ui/Button';
+import { CHILD_APP_APK_URL } from '@/src/lib/site-config';
 import { Reveal } from './Reveal';
 
 const childFeatures = [
@@ -52,6 +54,18 @@ export function ChildSection() {
                     <span className="text-[15px] font-bold text-kiddo-navy">{item.text}</span>
                   </motion.div>
                 ))}
+              </div>
+
+              <div className="mt-8">
+                <Button asChild size="xl" variant="accent" className="w-full sm:w-auto">
+                  <a href={CHILD_APP_APK_URL} download>
+                    <Download />
+                    Download the Child App
+                  </a>
+                </Button>
+                <p className="mt-3 text-[13px] font-medium text-kiddo-muted">
+                  Android APK · Free for KidDo families
+                </p>
               </div>
             </div>
           </Reveal>

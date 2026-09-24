@@ -57,8 +57,10 @@ describe('PublicLandingPage', () => {
     expect(screen.getByText(/How KidDo Works/i)).toBeTruthy();
     expect(screen.getByText(/See KidDo in action/i)).toBeTruthy();
     expect(screen.getByText(/Know what matters/i)).toBeTruthy();
+    expect(screen.getByText('Download the Parent App')).toBeTruthy();
     expect(screen.getByText(/closer together/i)).toBeTruthy();
     expect(screen.getByText(/an adventure/i)).toBeTruthy();
+    expect(screen.getByText('Download the Child App')).toBeTruthy();
     expect(screen.getByText(/kids' safety in mind/i)).toBeTruthy();
     expect(screen.getByText(/How kids grow with KidDo/i)).toBeTruthy();
     expect(screen.getByText(/What families are saying/i)).toBeTruthy();
@@ -93,11 +95,12 @@ describe('PublicLandingPage', () => {
     expect(screen.getAllByText(/Daily Mission/i).length).toBeGreaterThan(0);
   });
 
-  it('renders the download page with the APK button', () => {
+  it('renders the download page with both app downloads', () => {
     render(<DownloadPage />);
 
     expect(screen.getByText(/Get the KidDo app/i)).toBeTruthy();
-    expect(screen.getAllByText('Download APK').length).toBeGreaterThan(0);
+    expect(screen.getByText('Download Child App')).toBeTruthy();
+    expect(screen.getByText('Download Parent App')).toBeTruthy();
     expect(screen.getByText(/iOS — coming soon/i)).toBeTruthy();
     expect(screen.getByText(/Scan to install/i)).toBeTruthy();
   });

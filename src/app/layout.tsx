@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import "../index.css";
 import { Providers } from "./providers";
+import { SITE_NAME, SITE_URL } from "@/src/lib/site-config";
 
 export const metadata: Metadata = {
   title: {
-    default: "KidDo — Good Habits Today. Great Kids Tomorrow.",
-    template: "%s | KidDo",
+    default: `${SITE_NAME} — Good Habits Today. Great Kids Tomorrow.`,
+    template: `%s | ${SITE_NAME}`,
   },
   description:
     "KidDo helps children build positive habits, complete daily tasks, stay on top of schoolwork, earn meaningful rewards, and grow with support from parents and teachers.",
@@ -20,9 +21,7 @@ export const metadata: Metadata = {
     "kids app",
   ],
   authors: [{ name: "KidDo" }],
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://kiddoapp.in",
-  ),
+  metadataBase: new URL(SITE_URL),
   alternates: { canonical: "/" },
   icons: {
     icon: "/kiddo-logo-32.png",
@@ -30,7 +29,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    url: "/",
+    url: SITE_URL,
     title: "KidDo — Good Habits Today. Great Kids Tomorrow.",
     description:
       "KidDo helps children build positive habits, complete daily tasks, stay on top of schoolwork, earn meaningful rewards, and grow with support from parents and teachers.",

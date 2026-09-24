@@ -1,7 +1,9 @@
 import React from 'react';
-import { ClipboardList, TrendingUp, Lock, Check } from 'lucide-react';
+import { ClipboardList, TrendingUp, Lock, Check, Download } from 'lucide-react';
 import { Card } from '@/src/components/ui/Card';
 import { Badge } from '@/src/components/ui/Badge';
+import { Button } from '@/src/components/ui/Button';
+import { PARENT_APP_APK_URL } from '@/src/lib/site-config';
 import { Reveal } from './Reveal';
 
 const benefits = [
@@ -89,6 +91,18 @@ export function ParentSection() {
                     {point}
                   </span>
                 ))}
+              </div>
+
+              <div className="mt-8">
+                <Button asChild size="xl" className="w-full sm:w-auto">
+                  <a href={PARENT_APP_APK_URL} download>
+                    <Download />
+                    Download the Parent App
+                  </a>
+                </Button>
+                <p className="mt-3 text-[13px] font-medium text-kiddo-muted">
+                  Android APK · Free for KidDo families
+                </p>
               </div>
             </div>
           </Reveal>
