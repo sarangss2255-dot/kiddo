@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
+import { DataError } from '../components/DataError';
 import { DataTable } from '../components/DataTable';
 import { PageHeader } from '../components/PageHeader';
 import { useAdminRefresh } from '../common/useAdminRefresh';
@@ -46,18 +47,20 @@ export function TeachersPage() {
     students: any[];
   } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const refreshTick = useAdminRefresh();
 
   const loadTeachers = () => {
     setLoading(true);
+    setError(null);
     api.get('/admin/teachers')
       .then((res: any) => {
         setTeachers(res.data);
-        setLoading(false);
       })
       .catch(() => {
-        setLoading(false);
-      });
+        setError('Unable to load teachers. The server did not respond.');
+      })
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
@@ -111,9 +114,10 @@ export function TeachersPage() {
         classes: classesRes.data,
         students: studentsRes.data,
       });
-    } catch (_) {}
+    } catch (err: any) {
+      alert(err?.response?.data?.error || 'Failed to load teacher details');
+    }
   };
-
   return (
     <div className="space-y-8">
       {/* Title block */}
@@ -127,6 +131,8 @@ export function TeachersPage() {
           </Button>
         }
       />
+
+      <DataError message={error} onRetry={loadTeachers} />
 
       {/* Main teacher table list */}
       {loading ? (

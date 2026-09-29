@@ -3,6 +3,9 @@ import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import appletConfig from './firebase-applet-config.json';
 
+const { firestoreDatabaseId: appletFirestoreDatabaseId, ...appletOptions } =
+  appletConfig as FirebaseOptions & { firestoreDatabaseId?: string };
+
 const envConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -14,7 +17,7 @@ const envConfig = {
 };
 
 const firebaseConfig = {
-  ...appletConfig,
+  ...appletOptions,
   ...Object.fromEntries(
     Object.entries(envConfig).filter(([, value]) => typeof value === 'string' && value.length > 0),
   ),
@@ -23,7 +26,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const firestoreDatabaseId = (
   process.env.NEXT_PUBLIC_FIRESTORE_DATABASE_ID ??
-  appletConfig.firestoreDatabaseId ??
+  appletFirestoreDatabaseId ??
   ''
 ).trim();
 

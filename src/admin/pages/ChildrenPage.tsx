@@ -48,7 +48,7 @@ export function ChildrenPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const res = await api.get<UserRow[]>('/users/all');
+      const res = await api.get<UserRow[]>('/admin/users');
       setUsers(res.data || []);
     } catch (err) {
       toast.error('Failed to load children catalog');
@@ -79,7 +79,7 @@ export function ChildrenPage() {
   const toggleStatus = async (child: UserRow) => {
     try {
       const newStatus = !child.isActive;
-      await api.patch(`/users/${child._id}`, { isActive: newStatus });
+      await api.patch(`/admin/users/${child._id}`, { isActive: newStatus });
       toast.success(`Account status updated for ${child.firstName}`);
       setSelectedChild(selectedChild?._id === child._id ? { ...child, isActive: newStatus } : selectedChild);
       fetchUsers();

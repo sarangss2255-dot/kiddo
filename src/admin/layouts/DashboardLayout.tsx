@@ -2,167 +2,228 @@ import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronRight, LogOut, Menu, RefreshCw, Shield, X } from 'lucide-react';
+import { ChevronRight, LogOut, Menu, RefreshCw, Shield } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../../components/ui/Tooltip';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+} from '../../components/ui/Sheet';
 import { cn } from '../../lib/utils';
 import { brandContent } from '../common/content';
 import { adminNavSections } from '../common/navigation';
 import { dispatchAdminRefresh } from '../common/useAdminRefresh';
 import { useAuth } from '../context/AuthContext';
 
+interface SidebarContentProps {
+  pathname: string;
+  userName: string;
+  initials: string | null;
+  onNavigate?: () => void;
+  onLogout: () => void;
+}
+
+function SidebarContent({ pathname, userName, initials, onNavigate, onLogout }: SidebarContentProps) {
+  return (
+    <div className="flex h-full flex-col gap-5 p-4">
+      {/* Brand Header */}
+      <div className="flex items-center gap-3 px-2 pt-1">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-kiddo-navy/10 bg-white shadow-sm">
+          <img src="/kiddo-logo.png" alt="KidDo" className="h-full w-full object-cover" />
+        </div>
+        <div className="min-w-0">
+          <span className="block font-display text-lg font-bold leading-tight text-kiddo-navy">
+            {brandContent.name}
+          </span>
+          <Badge
+            variant="accent"
+            className="mt-0.5 px-1.5 py-0 text-[8px] font-black uppercase tracking-widest"
+          >
+            {brandContent.adminLabel}
+          </Badge>
+        </div>
+      </div>
+
+      {/* Admin Profile */}
+      <div className="rounded-2xl border border-kiddo-blue/20 bg-kiddo-blue/10 p-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-kiddo-navy text-sm font-bold uppercase text-white shadow-sm">
+            {initials ?? <Shield size={16} />}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-bold text-kiddo-navy">{userName}</p>
+            <span className="mt-0.5 inline-flex items-center rounded-full bg-white/70 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-kiddo-muted">
+              Administrator
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Nav Menu */}
+      <nav className="flex-1 space-y-5 overflow-y-auto pr-1">
+        {adminNavSections.map((section) => (
+          <div key={section.label}>
+            <span className="mb-2 block px-3 text-[10px] font-black uppercase tracking-[0.2em] text-kiddo-muted/80">
+              {section.label}
+            </span>
+            <div className="space-y-1">
+              {section.items.map((link) => {
+                const isActive = pathname === link.to;
+                const Icon = link.icon;
+                return (
+                  <Link
+                    key={link.to}
+                    href={link.to}
+                    onClick={onNavigate}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={cn(
+                      'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors duration-200',
+                      isActive
+                        ? 'bg-kiddo-navy text-white shadow-sm shadow-kiddo-navy/20'
+                        : 'text-kiddo-muted hover:bg-kiddo-navy/5 hover:text-kiddo-navy',
+                    )}
+                  >
+                    <Icon
+                      size={18}
+                      className={cn(
+                        'shrink-0 transition-colors',
+                        isActive ? 'text-white' : 'text-kiddo-muted group-hover:text-kiddo-navy',
+                      )}
+                    />
+                    <span className="truncate">{link.label}</span>
+                    {isActive && <ChevronRight size={14} className="ml-auto shrink-0 opacity-50" />}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </nav>
+
+      {/* Bottom Actions */}
+      <div className="border-t border-kiddo-navy/10 pt-3">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onLogout}
+          className="w-full justify-start gap-2.5 rounded-xl px-3 font-bold text-kiddo-muted hover:text-kiddo-navy"
+        >
+          <LogOut size={16} /> Sign Out
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function DashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const userName = user ? `${user.firstName} ${user.lastName}`.trim() || 'Admin' : 'Admin';
+  const initials = user?.firstName?.[0]?.toUpperCase() ?? null;
+
   return (
-    <div className="flex min-h-screen bg-kiddo-warm text-kiddo-navy font-sans antialiased overflow-hidden">
-      {/* MOBILE SIDEBAR TRIGGER */}
-      <div className="md:hidden fixed top-6 left-6 z-50">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="w-12 h-12 p-0 rounded-2xl bg-white border-kiddo-navy/10 shadow-xl"
-        >
-          {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-        </Button>
-      </div>
+    <TooltipProvider delayDuration={200}>
+      <div className="flex h-dvh overflow-hidden bg-kiddo-warm font-sans text-kiddo-navy antialiased">
+        {/* DESKTOP SIDEBAR */}
+        <aside className="hidden w-64 shrink-0 border-r border-kiddo-navy/10 bg-white lg:block">
+          <SidebarContent
+            pathname={pathname}
+            userName={userName}
+            initials={initials}
+            onLogout={logout}
+          />
+        </aside>
 
-      {/* SIDEBAR NAVIGATION */}
-      <aside
-        className={cn(
-          "fixed md:sticky top-0 bottom-0 left-0 z-40 w-72 bg-white border-r border-kiddo-navy/10 transition-all duration-300 ease-in-out",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        )}
-      >
-        <div className="h-full flex flex-col p-8">
-          {/* Brand Header */}
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-10 h-10 rounded-2xl bg-white shadow-sm border border-kiddo-navy/10 flex items-center justify-center overflow-hidden">
-              <img src="/kiddo-logo.png" alt="Logo" className="w-full h-full object-cover" />
-            </div>
-            <div>
-              <span className="font-display font-bold text-xl block leading-tight">{brandContent.name}</span>
-              <Badge variant="accent" className="px-1.5 py-0 text-[8px] font-black uppercase tracking-widest mt-0.5">
+        {/* MOBILE / TABLET DRAWER */}
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetContent
+            side="left"
+            className="w-[280px] max-w-[85vw] border-r border-kiddo-navy/10 bg-white p-0"
+          >
+            <SheetTitle className="sr-only">
+              {brandContent.name} {brandContent.adminLabel}
+            </SheetTitle>
+            <SheetDescription className="sr-only">
+              Admin workspace navigation
+            </SheetDescription>
+            <SidebarContent
+              pathname={pathname}
+              userName={userName}
+              initials={initials}
+              onNavigate={() => setSidebarOpen(false)}
+              onLogout={logout}
+            />
+          </SheetContent>
+        </Sheet>
+
+        {/* MAIN WORKSPACE */}
+        <main className="flex min-w-0 flex-1 flex-col">
+          {/* Sticky Top Bar */}
+          <header className="z-30 flex h-16 shrink-0 items-center justify-between gap-4 border-b border-kiddo-navy/10 bg-white/85 px-4 backdrop-blur-md sm:px-6 lg:px-8">
+            <div className="flex min-w-0 items-center gap-3">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setSidebarOpen(true)}
+                aria-label="Open navigation"
+                className="h-9 w-9 shrink-0 rounded-xl border-kiddo-navy/10 lg:hidden"
+              >
+                <Menu size={18} />
+              </Button>
+              <h1 className="truncate font-display text-base font-bold text-kiddo-navy sm:text-lg">
                 {brandContent.adminLabel}
-              </Badge>
+              </h1>
             </div>
-          </div>
 
-          {/* Admin Profile */}
-          <div className="p-4 mb-6 rounded-2xl bg-kiddo-blue/10 border border-kiddo-blue/20 shadow-none">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-kiddo-navy text-white flex items-center justify-center text-xl font-bold shadow-sm uppercase shrink-0">
-                {user?.firstName?.[0] ?? <Shield size={18} />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-sm truncate">
-                  {user ? `${user.firstName} ${user.lastName}`.trim() : 'Administrator'}
-                </h4>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <Badge variant="info" className="text-[9px] px-1.5 py-0 normal-case tracking-normal">
-                    Administrator
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Nav Menu */}
-          <nav className="flex-1 space-y-6 overflow-y-auto pr-2 custom-scrollbar">
-            {adminNavSections.map((section) => (
-              <div key={section.label} className="space-y-2">
-                <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-kiddo-muted px-4 mb-3">
-                  {section.label}
-                </span>
-                {section.items.map((link) => {
-                  const isActive = pathname === link.to;
-                  const Icon = link.icon;
-                  return (
-                    <Link
-                      key={link.to}
-                      href={link.to}
-                      onClick={() => setSidebarOpen(false)}
-                      className={cn(
-                        "flex items-center justify-between group px-4 py-3.5 rounded-2xl transition-all duration-200",
-                        isActive
-                          ? "bg-kiddo-navy text-white shadow-xl shadow-kiddo-navy/10"
-                          : "text-kiddo-muted hover:text-kiddo-navy hover:bg-kiddo-navy/5"
-                      )}
-                    >
-                      <div className="flex items-center gap-4">
-                        <Icon size={20} className={cn(isActive ? "text-white" : "text-kiddo-muted group-hover:text-kiddo-navy")} />
-                        <span className="font-bold text-sm">{link.label}</span>
-                      </div>
-                      {isActive && <ChevronRight size={14} className="opacity-40" />}
-                    </Link>
-                  );
-                })}
-              </div>
-            ))}
-          </nav>
-
-          {/* Bottom Actions */}
-          <div className="pt-6 space-y-4 border-t border-kiddo-navy/10">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={logout}
-              className="w-full h-10 rounded-xl font-black uppercase tracking-widest text-[10px]"
-            >
-              <LogOut size={14} /> Sign Out
-            </Button>
-          </div>
-        </div>
-      </aside>
-
-      {/* MAIN WORKSPACE */}
-      <main className="flex-1 flex flex-col min-w-0 relative">
-        {/* Top Bar */}
-        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-kiddo-navy/10 flex items-center justify-between px-8 md:px-12 sticky top-0 z-30">
-          <div>
-            <h2 className="text-xl md:text-2xl">{brandContent.adminLabel}</h2>
-          </div>
-
-          <div className="flex items-center gap-6">
-            <div className="hidden md:flex items-center gap-3">
-              <Badge variant="success" className="px-3 py-1 bg-kiddo-green/10 normal-case tracking-normal font-bold">
-                <span className="w-2 h-2 rounded-full bg-kiddo-green animate-pulse mr-2 inline-block" />
+            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+              <Badge
+                variant="success"
+                className="hidden items-center gap-2 border-none bg-kiddo-green/10 px-3 py-1 font-bold normal-case tracking-normal sm:inline-flex"
+              >
+                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-kiddo-green" />
                 System Live
               </Badge>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={dispatchAdminRefresh}
+                    aria-label="Refresh data"
+                    className="h-9 w-9 rounded-xl text-kiddo-muted hover:bg-kiddo-warm hover:text-kiddo-navy"
+                  >
+                    <RefreshCw size={17} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Refresh data</TooltipContent>
+              </Tooltip>
             </div>
+          </header>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={dispatchAdminRefresh}
-              className="w-10 h-10 p-0 rounded-xl hover:bg-kiddo-warm text-kiddo-muted"
-              title="Refresh data"
-            >
-              <RefreshCw size={18} />
-            </Button>
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="mx-auto w-full max-w-7xl p-4 sm:p-6 lg:p-8">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={pathname}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                >
+                  {children}
+                </motion.div>
+              </AnimatePresence>
+            </div>
           </div>
-        </header>
-
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-8 md:p-12">
-          <div className="max-w-6xl mx-auto w-full">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={pathname}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-              >
-                {children}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </TooltipProvider>
   );
 }

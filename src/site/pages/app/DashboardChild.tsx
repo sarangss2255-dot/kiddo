@@ -31,32 +31,17 @@ export function DashboardChild() {
   const xpCurrent = stars % 100;
   const xpTarget = 100;
 
-  const handleWakeUp = () => {
+  const handleWakeUp = async () => {
     if (wakeUpCompletedToday) return;
-    
-    const now = new Date();
-    const hours = now.getHours();
-    const minutes = now.getMinutes();
-    
-    let points: number;
-    let bracket: string;
-    
-    if (hours < 4 || (hours === 4 && minutes <= 30)) {
-      points = 30; bracket = 'before_430';
-    } else if (hours < 5 || (hours === 5 && minutes <= 30)) {
-      points = 20; bracket = 'before_530';
-    } else if (hours < 6 || (hours === 6 && minutes <= 30)) {
-      points = 10; bracket = 'before_630';
-    } else {
-      points = 0; bracket = 'after_630';
-    }
-    
-    setWakeUpResult({ points, bracket });
+
+    // Server decides the bracket and credits the points.
+    const result = await completeWakeUp();
+    if (!result) return;
+
+    setWakeUpResult({ points: result.rewardPoints, bracket: result.rewardBracket });
     setShowWakeUpReward(true);
-    
+
     setTimeout(() => setShowWakeUpReward(false), 3000);
-    
-    completeWakeUp();
   };
 
   return (

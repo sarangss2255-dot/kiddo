@@ -18,6 +18,8 @@ import { cn } from '../../../lib/utils';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
+import { AUTH_STORAGE_KEYS } from '../../../lib/auth-session';
+import { api } from '../../../api';
 
 // Types
 export interface Task {
@@ -75,8 +77,9 @@ export interface AppContextType {
   setWakeUpTargetTime: (time: string) => void;
   wakeUpCompletedToday: boolean;
   lastWakeUpReward: WakeUpCompletion | null;
-  completeWakeUp: () => WakeUpCompletion;
+  completeWakeUp: () => Promise<WakeUpCompletion | null>;
   isTodaySchoolDay: boolean;
+  liveError: string | null;
 }
 
 export interface WeeklySchedule {
@@ -143,6 +146,51 @@ const defaultWakeUpSettings: WakeUpSettings = {
   mandatory: true,
 };
 
+const TASK_CATEGORIES: Task['category'][] = [
+  'morning',
+  'bedtime',
+  'homework',
+  'chores',
+  'learning',
+  'other',
+];
+
+function mapApiTask(raw: any): Task {
+  const category = String(raw?.category ?? 'other').toLowerCase();
+  return {
+    id: String(raw?._id ?? raw?.id ?? ''),
+    title: String(raw?.title ?? 'Task'),
+    description: String(raw?.description ?? ''),
+    category: (TASK_CATEGORIES.includes(category as Task['category'])
+      ? category
+      : 'other') as Task['category'],
+    stars: Number(raw?.points ?? raw?.basePoints ?? 0),
+    status:
+      raw?.status === 'approved'
+        ? 'completed'
+        : raw?.status === 'completed'
+          ? 'review'
+          : 'todo',
+    recurring: raw?.isRecurring ? (raw?.recurrenceType === 'weekly' ? 'weekly' : 'daily') : 'once',
+  };
+}
+
+const REWARD_CATEGORIES = ['screen', 'treat', 'toy', 'activity'] as const;
+
+function mapApiReward(raw: any): Reward {
+  const category = String(raw?.category ?? '').toLowerCase();
+  return {
+    id: String(raw?._id ?? raw?.id ?? ''),
+    title: String(raw?.title ?? raw?.name ?? 'Reward'),
+    cost: Number(raw?.cost ?? raw?.pointCost ?? raw?.points ?? 0),
+    status: raw?.status === 'claimed' ? 'claimed' : 'active',
+    category: (REWARD_CATEGORIES.includes(category as (typeof REWARD_CATEGORIES)[number])
+      ? category
+      : 'activity') as Reward['category'],
+    claimedCount: Number(raw?.claimedCount ?? 0),
+  };
+}
+
 export function KiddoApp() {
   const router = useRouter();
   const pathname = usePathname();
@@ -163,6 +211,8 @@ export function KiddoApp() {
   const [wakeUpSettings, setWakeUpSettingsState] = useState<WakeUpSettings>(defaultWakeUpSettings);
   const [wakeUpCompletedToday, setWakeUpCompletedToday] = useState(false);
   const [lastWakeUpReward, setLastWakeUpReward] = useState<WakeUpCompletion | null>(null);
+  const [childId, setChildId] = useState<string | null>(null);
+  const [liveError, setLiveError] = useState<string | null>(null);
 
   // Child Profile Onboarding Details
   const childName = localStorage.getItem('kiddo_onboarding_child_name') || 'Leo';
@@ -172,15 +222,65 @@ export function KiddoApp() {
   const todayName = daysOfWeek[new Date().getDay()];
   const isTodaySchoolDay = weeklySchedule[todayName];
 
+  /** Load the signed-in account's real data from the backend. */
+  const loadFromApi = async () => {
+    try {
+      const [profile, taskList, rewardList] = await Promise.all([
+        api.get('/auth/me'),
+        api.get('/tasks'),
+        api.get('/rewards'),
+      ]);
+
+      if (profile) {
+        setStars(Number(profile.points ?? 0));
+        if (typeof profile.streak === 'number') setStreak(Number(profile.streak));
+        if (profile.role === 'child') setRoleState('child');
+      }
+      setTasks(Array.isArray(taskList) ? taskList.map(mapApiTask) : []);
+      setRewards(Array.isArray(rewardList) ? rewardList.map(mapApiReward) : []);
+
+      if (profile?.role === 'parent') {
+        const family = await api.get('/users/family');
+        const children = (Array.isArray(family) ? family : []).filter(
+          (user: any) => user.role === 'child',
+        );
+        if (children[0]) {
+          setChildId(String(children[0]._id));
+          if (children[0].firstName) {
+            localStorage.setItem('kiddo_onboarding_child_name', String(children[0].firstName));
+          }
+        }
+      } else if (profile?._id) {
+        setChildId(String(profile._id));
+      }
+
+      setLiveError(null);
+    } catch (err: any) {
+      if (err?.status === 401) {
+        router.replace('/auth');
+        return;
+      }
+      setLiveError(err?.message ?? 'Unable to load live data. Showing cached data.');
+    }
+  };
+
   // Load / Sync State
   useEffect(() => {
+    const token = localStorage.getItem(AUTH_STORAGE_KEYS.token);
+    if (!token) {
+      router.replace('/auth');
+      return;
+    }
+
+    void loadFromApi();
+
     const cachedTasks = localStorage.getItem('k_tasks');
     const cachedRewards = localStorage.getItem('k_rewards');
     const cachedStars = localStorage.getItem('k_stars');
     const cachedStreak = localStorage.getItem('k_streak');
     const cachedLevel = localStorage.getItem('k_level');
     const cachedAchievements = localStorage.getItem('k_achievements');
-    const cachedRole = localStorage.getItem('kiddo_user_role') as 'parent' | 'child';
+    const cachedRole = localStorage.getItem(AUTH_STORAGE_KEYS.role) as 'parent' | 'child';
 
     if (cachedTasks) setTasks(JSON.parse(cachedTasks));
     else setTasks(defaultTasks);
@@ -201,7 +301,7 @@ export function KiddoApp() {
         router.push(`/app/${cachedRole}`);
       }
     } else {
-      localStorage.setItem('kiddo_user_role', 'parent');
+      localStorage.setItem(AUTH_STORAGE_KEYS.role, 'parent');
       setRoleState('parent');
       if (pathname === '/app' || pathname === '/app/') {
         router.push('/app/parent');
@@ -240,77 +340,122 @@ export function KiddoApp() {
 
   const setRole = (newRole: 'parent' | 'child') => {
     setRoleState(newRole);
-    localStorage.setItem('kiddo_user_role', newRole);
+    localStorage.setItem(AUTH_STORAGE_KEYS.role, newRole);
     router.push(`/app/${newRole}`);
   };
 
-  const addTask = (task: Omit<Task, 'id' | 'status'>) => {
-    const newTask: Task = { ...task, id: String(Date.now()), status: 'todo' };
-    const updated = [newTask, ...tasks];
-    setTasks(updated);
-    saveToLocal(updated);
-    addNotification('Task Assigned', `New task "${task.title}" has been created.`);
+  const addTask = async (task: Omit<Task, 'id' | 'status'>) => {
+    if (!childId) {
+      addNotification('Add a child first', 'Create a child profile before assigning missions.');
+      return;
+    }
+    try {
+      const created = await api.post('/tasks', {
+        assignedTo: childId,
+        title: task.title,
+        description: task.description,
+        category: task.category,
+        points: task.stars,
+        dueDate: new Date(Date.now() + 86_400_000).toISOString(),
+      });
+      const updated = [mapApiTask(created), ...tasks];
+      setTasks(updated);
+      saveToLocal(updated);
+      addNotification('Task Assigned', `New task "${task.title}" has been created.`);
+    } catch (err: any) {
+      addNotification('Could not create task', err?.message ?? 'Please try again.');
+    }
   };
 
-  const completeTask = (taskId: string) => {
+  const completeTask = async (taskId: string) => {
+    const previous = tasks;
     const updated = tasks.map(t => t.id === taskId ? { ...t, status: 'review' as const } : t);
     setTasks(updated);
     saveToLocal(updated);
-    addNotification('Task Ready for Review', `${childName} completed "${tasks.find(t => t.id === taskId)?.title}".`);
+    try {
+      await api.patch(`/tasks/${taskId}`, { status: 'completed' });
+      addNotification('Task Ready for Review', `${childName} completed "${previous.find(t => t.id === taskId)?.title}".`);
+    } catch (err: any) {
+      setTasks(previous);
+      addNotification('Could not complete task', err?.message ?? 'Please try again.');
+    }
   };
 
-  const approveTask = (taskId: string) => {
+  const approveTask = async (taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
-    const updated = tasks.map(t => t.id === taskId ? { ...t, status: 'completed' as const } : t);
-    setTasks(updated);
-    const newStars = stars + task.stars;
-    setStars(newStars);
-    const newLevel = Math.floor(newStars / 100) + 1;
-    if (newLevel > level) {
-      setLevel(newLevel);
-      localStorage.setItem('k_level', String(newLevel));
-      addNotification('Level Up! 🌟', `${childName} reached Level ${newLevel}!`);
+    try {
+      await api.patch(`/tasks/${taskId}`, { status: 'approved' });
+      const updated = tasks.map(t => t.id === taskId ? { ...t, status: 'completed' as const } : t);
+      setTasks(updated);
+      saveToLocal(updated);
+      const profile = await api.get('/auth/me');
+      setStars(Number(profile?.points ?? stars));
+      addNotification('Task Approved', `"${task.title}" approved! +${task.stars} ⭐️ rewarded.`);
+    } catch (err: any) {
+      // Points are only credited server-side; never show a fake success.
+      addNotification('Could not approve task', err?.message ?? 'Please try again.');
     }
-    saveToLocal(updated, undefined, newStars);
-    addNotification('Task Approved', `"${task.title}" approved! +${task.stars} ⭐️ rewarded.`);
   };
 
-  const rejectTask = (taskId: string) => {
+  const rejectTask = async (taskId: string) => {
+    const previous = tasks;
     const updated = tasks.map(t => t.id === taskId ? { ...t, status: 'todo' as const } : t);
     setTasks(updated);
     saveToLocal(updated);
-    addNotification('Task Needs More Work', `"${tasks.find(t => t.id === taskId)?.title}" sent back.`);
+    try {
+      await api.patch(`/tasks/${taskId}`, { status: 'todo' });
+      addNotification('Task Needs More Work', `"${previous.find(t => t.id === taskId)?.title}" sent back.`);
+    } catch (err: any) {
+      setTasks(previous);
+      addNotification('Could not update task', err?.message ?? 'Please try again.');
+    }
   };
 
-  const claimReward = (rewardId: string) => {
+  const claimReward = async (rewardId: string) => {
     const reward = rewards.find(r => r.id === rewardId);
-    if (!reward || stars < reward.cost) return;
-    const newStars = stars - reward.cost;
-    setStars(newStars);
-    const updated = rewards.map(r => r.id === rewardId ? { ...r, status: 'claimed' as const, claimedCount: r.claimedCount + 1 } : r);
-    setRewards(updated);
-    saveToLocal(undefined, updated, newStars);
-    addNotification('Reward Claimed', `${childName} redeemed "${reward.title}".`);
+    if (!reward) return;
+
+    if (role !== 'child') {
+      addNotification(
+        'Child account required',
+        'Rewards are redeemed from the child account (coins are spent server-side).',
+      );
+      return;
+    }
+
+    try {
+      await api.post(`/rewards/${rewardId}/redeem`, {});
+      const updated = rewards.map(r => r.id === rewardId ? { ...r, status: 'claimed' as const, claimedCount: r.claimedCount + 1 } : r);
+      setRewards(updated);
+      saveToLocal(undefined, updated);
+      const profile = await api.get('/auth/me');
+      setStars(Number(profile?.points ?? stars));
+      addNotification('Reward Claimed', `${childName} redeemed "${reward.title}".`);
+    } catch (err: any) {
+      addNotification('Could not redeem reward', err?.message ?? 'Please try again.');
+    }
   };
 
-  const approveRewardClaim = (rewardId: string) => {
-    const updated = rewards.map(r => r.id === rewardId ? { ...r, status: 'approved' as const } : r);
-    setRewards(updated);
-    saveToLocal(undefined, updated);
-    addNotification('Reward Approved', `Claim for "${rewards.find(r => r.id === rewardId)?.title}" is approved!`);
+  const approveRewardClaim = (_rewardId: string) => {
+    addNotification(
+      'Approval happens in the parent app',
+      'Reward redemptions are approved through the KidDo parent app.',
+    );
   };
 
-  const addStars = (amount: number) => {
-    const newStars = stars + amount;
-    setStars(newStars);
-    localStorage.setItem('k_stars', String(newStars));
+  const addStars = (_amount: number) => {
+    addNotification(
+      'Rewards are server-verified',
+      'Points are credited by the backend after a verified game session.',
+    );
   };
 
-  const subtractStars = (amount: number) => {
-    const newStars = Math.max(0, stars - amount);
-    setStars(newStars);
-    localStorage.setItem('k_stars', String(newStars));
+  const subtractStars = (_amount: number) => {
+    addNotification(
+      'Rewards are server-verified',
+      'Points are managed by the backend.',
+    );
   };
 
   const addNotification = (title: string, message: string) => {
@@ -319,19 +464,8 @@ export function KiddoApp() {
   };
 
   const resetData = () => {
-    localStorage.removeItem('k_tasks');
-    localStorage.removeItem('k_rewards');
-    localStorage.removeItem('k_stars');
-    localStorage.removeItem('k_streak');
-    localStorage.removeItem('k_level');
-    localStorage.removeItem('k_achievements');
-    setTasks(defaultTasks);
-    setRewards(defaultRewards);
-    setStars(120);
-    setStreak(5);
-    setLevel(3);
-    setAchievements(defaultAchievements);
-    addNotification('Data Reset', 'Demo environment restored.');
+    void loadFromApi();
+    addNotification('Data refreshed', 'Reloaded from the KidDo server.');
   };
 
   const setWeeklySchedule = (s: WeeklySchedule) => {
@@ -351,44 +485,39 @@ export function KiddoApp() {
     localStorage.setItem('k_wake_up_settings', JSON.stringify(updated));
   };
 
-  const completeWakeUp = (): WakeUpCompletion => {
-    const now = new Date();
-    const hours = now.getHours();
-    const minutes = now.getMinutes();
-    
-    // Calculate reward bracket
-    let rewardPoints: number;
-    let rewardBracket: string;
-    
-    if (hours < 4 || (hours === 4 && minutes <= 30)) {
-      rewardPoints = 30;
-      rewardBracket = 'before_430';
-    } else if (hours < 5 || (hours === 5 && minutes <= 30)) {
-      rewardPoints = 20;
-      rewardBracket = 'before_530';
-    } else if (hours < 6 || (hours === 6 && minutes <= 30)) {
-      rewardPoints = 10;
-      rewardBracket = 'before_630';
-    } else {
-      rewardPoints = 0;
-      rewardBracket = 'after_630';
+  const completeWakeUp = async (): Promise<WakeUpCompletion | null> => {
+    if (!childId) {
+      addNotification('Child required', 'Add a child profile before recording a wake-up.');
+      return null;
     }
 
-    const result: WakeUpCompletion = {
-      date: now.toISOString().split('T')[0],
-      completedAt: now.toISOString(),
-      rewardPoints,
-      rewardBracket,
-    };
+    try {
+      // The backend is authoritative for both the bracket and the points.
+      const res = await api.post(`/wake-up/${childId}/complete`, {
+        completedAt: new Date().toISOString(),
+      });
 
-    setLastWakeUpReward(result);
-    setWakeUpCompletedToday(true);
-    setStars(prev => prev + rewardPoints);
-    localStorage.setItem('k_stars', String(stars + rewardPoints));
-    localStorage.setItem('k_wake_up_completed', now.toISOString());
-    localStorage.setItem('k_last_wake_up_reward', JSON.stringify(result));
+      const completedAt = String(res?.completedAt ?? new Date().toISOString());
+      const result: WakeUpCompletion = {
+        date: completedAt.slice(0, 10),
+        completedAt,
+        rewardPoints: Number(res?.rewardPoints ?? 0),
+        rewardBracket: String(res?.rewardBracket ?? 'after_630'),
+      };
 
-    return result;
+      setLastWakeUpReward(result);
+      setWakeUpCompletedToday(true);
+      localStorage.setItem('k_wake_up_completed', completedAt);
+      localStorage.setItem('k_last_wake_up_reward', JSON.stringify(result));
+
+      const profile = await api.get('/auth/me');
+      setStars(Number(profile?.points ?? stars));
+
+      return result;
+    } catch (err: any) {
+      addNotification('Wake-up not recorded', err?.message ?? 'Please try again.');
+      return null;
+    }
   };
 
   const openParentGate = () => {
@@ -431,7 +560,7 @@ export function KiddoApp() {
       streak, level, childName, childAvatar, achievements, notifications, resetData,
       weeklySchedule, setWeeklySchedule, updateScheduleDay,
       wakeUpSettings, setWakeUpTargetTime,
-      wakeUpCompletedToday, lastWakeUpReward, completeWakeUp,
+      wakeUpCompletedToday, lastWakeUpReward, completeWakeUp, liveError,
       isTodaySchoolDay
     }}>
       <div className="flex min-h-screen bg-brand-bg text-brand-navy font-sans antialiased overflow-hidden">

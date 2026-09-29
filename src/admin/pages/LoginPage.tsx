@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, Eye, EyeOff, Lock, Mail, ShieldCheck } from 'lucide-react';
@@ -13,12 +13,18 @@ import { useAuth } from '../context/AuthContext';
 
 export function LoginPage() {
   const router = useRouter();
-  const { login, loginWithGoogle } = useAuth();
+  const { login, loginWithGoogle, token } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (token) {
+      router.replace('/admin/dashboard');
+    }
+  }, [token, router]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();

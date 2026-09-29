@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
+import { DataError } from '../components/DataError';
 import { DataTable } from '../components/DataTable';
 import { PageHeader } from '../components/PageHeader';
 import { useAdminRefresh } from '../common/useAdminRefresh';
@@ -19,18 +20,24 @@ interface UserRow {
 export function UsersPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const refreshTick = useAdminRefresh();
 
-  useEffect(() => {
+  const load = () => {
     setLoading(true);
-    api.get<UserRow[]>('/users/all')
+    setError(null);
+    api.get<UserRow[]>('/admin/users')
       .then((response: { data: UserRow[] }) => {
         setUsers(response.data);
-        setLoading(false);
       })
       .catch(() => {
-        setLoading(false);
-      });
+        setError('Unable to load users. The server did not respond.');
+      })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    load();
   }, [refreshTick]);
 
   return (
@@ -44,6 +51,8 @@ export function UsersPage() {
           </Badge>
         }
       />
+
+      <DataError message={error} onRetry={load} />
 
       {loading ? (
         <div className="flex items-center justify-center p-12 border border-slate-100 bg-white rounded-2xl text-slate-400">

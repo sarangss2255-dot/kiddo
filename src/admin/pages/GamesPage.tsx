@@ -43,7 +43,7 @@ export function GamesPage() {
   const fetchGameStats = async () => {
     try {
       setLoading(true);
-      const res = await api.get<UserRow[]>('/users/all');
+      const res = await api.get<UserRow[]>('/admin/users');
       
       const children = (res.data || []).filter((u) => u.role === 'child');
 

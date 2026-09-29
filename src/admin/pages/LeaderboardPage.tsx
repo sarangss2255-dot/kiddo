@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client';
+import { DataError } from '../components/DataError';
 import { PageHeader } from '../components/PageHeader';
 import { useAdminRefresh } from '../common/useAdminRefresh';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/src/components/ui/Card';
@@ -33,22 +34,28 @@ export function LeaderboardPage() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const refreshTick = useAdminRefresh();
 
-  useEffect(() => {
+  const load = () => {
     setLoading(true);
+    setError(null);
     Promise.all([
-      api.get<LeaderboardEntry[]>('/leaderboard?type=global'),
-      api.get<UserRow[]>('/users/all'),
+      api.get<LeaderboardEntry[]>('/admin/leaderboard'),
+      api.get<UserRow[]>('/admin/users'),
     ])
       .then(([rankings, roster]) => {
         setEntries(rankings.data || []);
         setUsers(roster.data || []);
-        setLoading(false);
       })
       .catch(() => {
-        setLoading(false);
-      });
+        setError('Unable to load leaderboard data. The server did not respond.');
+      })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    load();
   }, [refreshTick]);
 
   const children = useMemo(() => users.filter((user) => user.role === 'child'), [users]);
@@ -70,6 +77,8 @@ export function LeaderboardPage() {
         title="Leaderboard"
         description="Monitor student rankings, gamification statistics, and mini-game logs."
       />
+
+      <DataError message={error} onRetry={load} />
 
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

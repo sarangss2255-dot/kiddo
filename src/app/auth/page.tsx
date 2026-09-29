@@ -1,4 +1,5 @@
 import { AuthPage } from "@/src/site/pages/app/AuthPage";
+import { ErrorBoundary } from "@/src/components/ErrorBoundary";
 
 export default async function AuthRoute({
   searchParams,
@@ -8,5 +9,12 @@ export default async function AuthRoute({
   const params = await searchParams;
   const initialMode = params.mode === "signup" ? "signup" : "login";
 
-  return <AuthPage initialMode={initialMode} />;
+  return (
+    <ErrorBoundary
+      title="Sign-in error"
+      description="The login page hit an unexpected error. Retry or reload to continue."
+    >
+      <AuthPage initialMode={initialMode} />
+    </ErrorBoundary>
+  );
 }

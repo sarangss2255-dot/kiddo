@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
+import { DataError } from '../components/DataError';
 import { DataTable } from '../components/DataTable';
 import { PageHeader } from '../components/PageHeader';
 import { useAdminRefresh } from '../common/useAdminRefresh';
@@ -18,18 +19,24 @@ interface TaskRow {
 export function TasksPage() {
   const [tasks, setTasks] = useState<TaskRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const refreshTick = useAdminRefresh();
 
-  useEffect(() => {
+  const load = () => {
     setLoading(true);
+    setError(null);
     api.get<TaskRow[]>('/admin/tasks')
       .then((response: { data: TaskRow[] }) => {
         setTasks(response.data);
-        setLoading(false);
       })
       .catch(() => {
-        setLoading(false);
-      });
+        setError('Unable to load missions. The server did not respond.');
+      })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    load();
   }, [refreshTick]);
 
   const getCategoryEmoji = (category: string) => {
@@ -54,6 +61,8 @@ export function TasksPage() {
           </Badge>
         }
       />
+
+      <DataError message={error} onRetry={load} />
 
       {loading ? (
         <div className="text-center p-12 bg-white rounded-2xl border border-slate-100 text-slate-400">

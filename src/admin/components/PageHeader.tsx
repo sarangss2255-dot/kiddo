@@ -13,15 +13,22 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-      <div>
-        <Badge variant="accent" className="px-3 py-1 mb-2 font-bold bg-amber-100 text-amber-800 border-none rounded-full">
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
+        <Badge
+          variant="accent"
+          className="rounded-full border-none bg-kiddo-orange/15 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-kiddo-orange"
+        >
           {eyebrow}
         </Badge>
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-800">{title}</h1>
-        {description && <p className="text-base text-slate-500 mt-2 font-medium">{description}</p>}
+        <h1 className="mt-2 font-display text-2xl font-extrabold tracking-tight text-kiddo-navy md:text-3xl">
+          {title}
+        </h1>
+        {description && (
+          <p className="mt-1 text-sm font-medium text-kiddo-muted md:text-base">{description}</p>
+        )}
       </div>
-      {action}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 }

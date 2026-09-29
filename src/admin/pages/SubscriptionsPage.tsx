@@ -30,7 +30,7 @@ export function SubscriptionsPage() {
   const fetchParents = async () => {
     try {
       setLoading(true);
-      const res = await api.get<UserRow[]>('/users/all');
+      const res = await api.get<UserRow[]>('/admin/users');
       setParents((res.data || []).filter((u) => u.role === 'parent'));
     } catch (err) {
       toast.error('Failed to load parent records');

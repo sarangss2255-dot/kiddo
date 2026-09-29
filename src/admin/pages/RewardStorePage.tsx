@@ -62,13 +62,25 @@ export function RewardStorePage() {
     try {
       setLoading(true);
       const [itemsRes, categoriesRes] = await Promise.all([
-        api.get<RewardStoreItem[]>('/reward-store/admin/items'),
-        api.get<Category[]>('/reward-store/categories/all'),
+        api.get<{ items?: RewardStoreItem[] } | RewardStoreItem[]>(
+          '/admin/reward-store/items?limit=100',
+        ),
+        api.get<{ categories?: Category[] } | Category[]>('/admin/reward-store/categories'),
       ]);
-      setItems(itemsRes.data || []);
-      setCategories(categoriesRes.data || []);
-      if (categoriesRes.data && categoriesRes.data.length > 0) {
-        setCategory(categoriesRes.data[0]._id);
+
+      // The store API paginates items ({ items, total, ... }); categories are
+      // returned as a plain array. Accept either shape defensively.
+      const itemsData = itemsRes.data;
+      const categoryData = categoriesRes.data;
+      const itemList = Array.isArray(itemsData) ? itemsData : itemsData?.items ?? [];
+      const categoryList = Array.isArray(categoryData)
+        ? categoryData
+        : categoryData?.categories ?? [];
+
+      setItems(itemList);
+      setCategories(categoryList);
+      if (categoryList.length > 0) {
+        setCategory(categoryList[0]._id);
       }
     } catch (err) {
       toast.error('Failed to load store data');
@@ -113,10 +125,10 @@ export function RewardStorePage() {
 
     try {
       if (editingItem) {
-        await api.patch(`/reward-store/items/${editingItem._id}`, payload);
+        await api.patch(`/admin/reward-store/items/${editingItem._id}`, payload);
         toast.success('Reward store item updated successfully');
       } else {
-        await api.post('/reward-store/items', payload);
+        await api.post('/admin/reward-store/items', payload);
         toast.success('Reward store item created successfully');
       }
       setDialogOpen(false);
@@ -146,7 +158,7 @@ export function RewardStorePage() {
   const handleDeleteItem = async (id: string) => {
     if (!confirm('Are you sure you want to delete this store item?')) return;
     try {
-      await api.delete(`/reward-store/items/${id}`);
+      await api.delete(`/admin/reward-store/items/${id}`);
       toast.success('Store item deleted successfully');
       fetchData();
     } catch (err) {

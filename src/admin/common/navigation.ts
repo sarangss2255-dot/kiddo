@@ -3,6 +3,7 @@ import {
   Users,
   Award,
   GraduationCap,
+  School,
   ClipboardList,
   Gift,
   ShoppingBag,
@@ -33,6 +34,7 @@ export const adminNavSections: AdminNavSection[] = [
   {
     label: 'Users',
     items: [
+      { to: '/admin/schools', label: 'Schools', icon: School },
       { to: '/admin/parents', label: 'Parents', icon: Users },
       { to: '/admin/children', label: 'Children', icon: Award },
       { to: '/admin/teachers', label: 'Teachers', icon: GraduationCap },

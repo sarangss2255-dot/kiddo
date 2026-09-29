@@ -37,7 +37,7 @@ export function ParentsPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const res = await api.get<UserRow[]>('/users/all');
+      const res = await api.get<UserRow[]>('/admin/users');
       setUsers(res.data || []);
     } catch (err) {
       toast.error('Failed to load parents catalog');
@@ -73,7 +73,7 @@ export function ParentsPage() {
   const toggleStatus = async (parent: UserRow) => {
     try {
       const newStatus = !parent.isActive;
-      await api.patch(`/users/${parent._id}`, { isActive: newStatus });
+      await api.patch(`/admin/users/${parent._id}`, { isActive: newStatus });
       toast.success(`Account status updated for ${parent.firstName}`);
       setSelectedParent(selectedParent?._id === parent._id ? { ...parent, isActive: newStatus } : selectedParent);
       fetchUsers();

@@ -3,6 +3,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from './firebase';
 import { UserProfile } from './types';
 import { api } from './api';
+import { AUTH_STORAGE_KEYS } from './lib/auth-session';
 
 interface AuthContextType {
   user: User | null;
@@ -12,7 +13,7 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
 }
 
-const PROFILE_KEY = 'kiddo_profile';
+const PROFILE_KEY = AUTH_STORAGE_KEYS.profile;
 
 const profileStorage = {
   getItem: (key: string) => Promise.resolve(localStorage.getItem(key)),

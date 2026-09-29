@@ -1,7 +1,8 @@
 import { auth } from './firebase';
+import { AUTH_STORAGE_KEYS } from './lib/auth-session';
 
 const PROD_API_BASE_URL = '/api/v1';
-const TOKEN_KEY = 'kiddo_token';
+const TOKEN_KEY = AUTH_STORAGE_KEYS.token;
 
 const REQUEST_TIMEOUT_MS = 30_000;
 const MAX_GET_RETRIES = 2;

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api/client';
+import { DataError } from '../components/DataError';
 import { DataTable } from '../components/DataTable';
 import { PageHeader } from '../components/PageHeader';
 import { useAdminRefresh } from '../common/useAdminRefresh';
@@ -17,18 +18,24 @@ interface RewardRow {
 export function RewardsPage() {
   const [rewards, setRewards] = useState<RewardRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const refreshTick = useAdminRefresh();
 
-  useEffect(() => {
+  const load = () => {
     setLoading(true);
+    setError(null);
     api.get<RewardRow[]>('/admin/rewards')
       .then((response: { data: RewardRow[] }) => {
         setRewards(response.data);
-        setLoading(false);
       })
       .catch(() => {
-        setLoading(false);
-      });
+        setError('Unable to load rewards. The server did not respond.');
+      })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    load();
   }, [refreshTick]);
 
   return (
@@ -42,6 +49,8 @@ export function RewardsPage() {
           </Badge>
         }
       />
+
+      <DataError message={error} onRetry={load} />
 
       {loading ? (
         <div className="text-center p-12 bg-white rounded-2xl border border-slate-100 text-slate-400">

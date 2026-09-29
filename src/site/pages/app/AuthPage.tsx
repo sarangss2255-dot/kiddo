@@ -28,10 +28,28 @@ import { PhoneDashboard } from '../../landing/PhoneDashboard';
 import { cn } from '../../../lib/utils';
 import { api } from '../../../api';
 import { auth, googleProvider } from '../../../firebase';
-import { signInWithPopup } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import {
+  AUTH_STORAGE_KEYS,
+  isAdminRole,
+  saveAdminSession,
+  saveAppSession,
+  type AdminSessionUser,
+} from '../../../lib/auth-session';
 
 interface AuthPageProps {
   initialMode?: 'login' | 'signup';
+}
+
+const ADMIN_ERROR_CODES = ['ADMIN_ACCOUNT_MOBILE_ACCESS_DENIED', 'ADMIN_ACCESS_DENIED'];
+
+function isAdminAccountError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    typeof (error as { code?: unknown }).code === 'string' &&
+    ADMIN_ERROR_CODES.includes((error as { code: string }).code)
+  );
 }
 
 const avatars = ['FOX', 'PANDA', 'LION', 'KOALA', 'BEE', 'UNICORN', 'CAT', 'BEAR'];
@@ -68,22 +86,50 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
     ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } }
     : { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -16 } };
 
-  const finishLogin = async (payload: any, options: { onboarding?: boolean } = {}) => {
-    await api.setToken(payload.accessToken);
-    localStorage.setItem('kiddo_auth_user', JSON.stringify(payload.user));
+  const buildAdminUser = (payload: any): AdminSessionUser => {
+    const dbUser = payload?.user ?? {};
+    return {
+      id: String(dbUser.id ?? dbUser._id ?? ''),
+      role: String(dbUser.role ?? ''),
+      firstName: dbUser.firstName || 'Admin',
+      lastName: dbUser.lastName || '',
+      email: dbUser.email || '',
+    };
+  };
 
-    if (['super_admin', 'manager', 'school_admin'].includes(payload.user.role)) {
-      router.push('/admin');
+  /** Admin workspace handshake — used when Firebase sign-in resolves to an admin role. */
+  const finishAdminLogin = async (idToken: string) => {
+    const payload = await api.post('/admin/auth/login', { idToken });
+    const adminUser = buildAdminUser(payload);
+
+    if (!isAdminRole(adminUser.role)) {
+      throw new Error('Access denied: You are not authorized as an administrator.');
+    }
+
+    saveAdminSession(payload.accessToken, adminUser);
+    await api.setToken(payload.accessToken);
+    router.push('/admin/dashboard');
+  };
+
+  const finishLogin = async (payload: any, options: { onboarding?: boolean } = {}) => {
+    const role = payload?.user?.role;
+
+    // Role-wise differentiation: administrative accounts land in the web
+    // workspace, everyone else continues into the family app.
+    if (isAdminRole(role)) {
+      saveAdminSession(payload.accessToken, buildAdminUser(payload));
+      await api.setToken(payload.accessToken);
+      router.push('/admin/dashboard');
       return;
     }
 
-    if (payload.user.role === 'child') {
-      localStorage.setItem('kiddo_user_role', 'child');
+    await api.setToken(payload.accessToken);
+    saveAppSession(payload.accessToken, payload.user, role === 'child' ? 'child' : 'parent');
+
+    if (role === 'child') {
       router.push('/app/child');
       return;
     }
-
-    localStorage.setItem('kiddo_user_role', 'parent');
 
     if (options.onboarding) {
       setStep('onboarding');
@@ -142,6 +188,20 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
       });
       await finishLogin(payload);
     } catch (err: any) {
+      if (isAdminAccountError(err)) {
+        // Administrative accounts authenticate through Firebase. The local
+        // /auth/login check only identifies the account type, so verify the
+        // password with Firebase before completing the admin handshake.
+        try {
+          const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
+          await finishAdminLogin(await credential.user.getIdToken(true));
+        } catch {
+          setError(
+            'Admin sign-in failed. If this admin account uses Google, choose "Continue with Google".',
+          );
+        }
+        return;
+      }
       setError(err?.message || 'Unable to sign in. Check credentials and try again.');
     } finally {
       setLoading(false);
@@ -156,17 +216,26 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
       const idToken = await credential.user.getIdToken();
       const displayName = credential.user.displayName?.trim() || 'Parent';
       const [firstName, ...lastNameParts] = displayName.split(' ');
-      const payload = await api.post('/auth/firebase', {
-        idToken,
-        ...(mode === 'signup'
-          ? {
-              firstName,
-              lastName: lastNameParts.join(' '),
-              familyName: familyName.trim() || `${firstName}'s Family`,
-            }
-          : {}),
-      });
-      await finishLogin(payload, { onboarding: mode === 'signup' });
+      try {
+        const payload = await api.post('/auth/firebase', {
+          idToken,
+          ...(mode === 'signup'
+            ? {
+                firstName,
+                lastName: lastNameParts.join(' '),
+                familyName: familyName.trim() || `${firstName}'s Family`,
+              }
+            : {}),
+        });
+        await finishLogin(payload, { onboarding: mode === 'signup' });
+      } catch (err) {
+        if (isAdminAccountError(err)) {
+          // Same Firebase identity, administrative workspace.
+          await finishAdminLogin(idToken);
+          return;
+        }
+        throw err;
+      }
     } catch (err: any) {
       setError(err?.message || 'Google sign-in failed. Check Firebase and backend configuration.');
     } finally {
@@ -190,7 +259,7 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
   };
 
   const handleRoleSelect = (role: 'parent' | 'child') => {
-    localStorage.setItem('kiddo_user_role', role);
+    localStorage.setItem(AUTH_STORAGE_KEYS.role, role);
     router.push(role === 'parent' ? '/app/parent' : '/app/child');
   };
 
