@@ -65,10 +65,17 @@ export interface AppContextType {
   subtractStars: (amount: number) => void;
   streak: number;
   level: number;
+  /** Signed-in parent/guardian display name (from /auth/me). */
+  parentName: string;
+  /** Signed-in account email (from /auth/me). */
+  parentEmail: string;
+  /** Selected child document id in this family. */
+  childId: string | null;
   childName: string;
   childAvatar: string;
   achievements: Achievement[];
   notifications: any[];
+  addNotification: (title: string, message: string) => void;
   resetData: () => void;
   weeklySchedule: WeeklySchedule;
   setWeeklySchedule: (s: WeeklySchedule) => void;
@@ -213,9 +220,11 @@ export function KiddoApp() {
   const [lastWakeUpReward, setLastWakeUpReward] = useState<WakeUpCompletion | null>(null);
   const [childId, setChildId] = useState<string | null>(null);
   const [liveError, setLiveError] = useState<string | null>(null);
+  const [parentName, setParentName] = useState('Parent');
+  const [parentEmail, setParentEmail] = useState('');
 
-  // Child Profile Onboarding Details
-  const childName = localStorage.getItem('kiddo_onboarding_child_name') || 'Leo';
+  // Child profile (loaded from the API / onboarding cache — never a fake name).
+  const childName = localStorage.getItem('kiddo_onboarding_child_name') || 'Your child';
   const childAvatar = localStorage.getItem('kiddo_onboarding_child_avatar') || '🦊';
 
   const daysOfWeek: (keyof WeeklySchedule)[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -235,6 +244,13 @@ export function KiddoApp() {
         setStars(Number(profile.points ?? 0));
         if (typeof profile.streak === 'number') setStreak(Number(profile.streak));
         if (profile.role === 'child') setRoleState('child');
+
+        const fullName = [profile.firstName, profile.lastName]
+          .filter((part: unknown) => typeof part === 'string' && part.trim().length > 0)
+          .join(' ')
+          .trim();
+        setParentName(fullName || String(profile.firstName ?? 'Parent'));
+        setParentEmail(String(profile.email ?? ''));
       }
       setTasks(Array.isArray(taskList) ? taskList.map(mapApiTask) : []);
       setRewards(Array.isArray(rewardList) ? rewardList.map(mapApiReward) : []);
@@ -557,7 +573,8 @@ export function KiddoApp() {
     <AppContext.Provider value={{
       role, setRole, tasks, addTask, completeTask, approveTask, rejectTask,
       rewards, claimReward, approveRewardClaim, stars, addStars, subtractStars,
-      streak, level, childName, childAvatar, achievements, notifications, resetData,
+      streak, level, parentName, parentEmail, childId, childName, childAvatar,
+      achievements, notifications, addNotification, resetData,
       weeklySchedule, setWeeklySchedule, updateScheduleDay,
       wakeUpSettings, setWakeUpTargetTime,
       wakeUpCompletedToday, lastWakeUpReward, completeWakeUp, liveError,
@@ -607,7 +624,7 @@ export function KiddoApp() {
                   {role === 'parent' ? '👩‍💻' : childAvatar}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-sm truncate">{role === 'parent' ? 'Sarah' : childName}</h4>
+                  <h4 className="font-bold text-sm truncate">{role === 'parent' ? parentName : childName}</h4>
                   <div className="flex items-center gap-2 mt-0.5">
                     {role === 'parent' ? (
                       <Badge variant="info" className="text-[9px] px-1.5 py-0 normal-case tracking-normal">Admin</Badge>

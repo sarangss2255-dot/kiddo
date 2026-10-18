@@ -1,22 +1,38 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useKiddoApp } from './KiddoApp';
 import { Settings, User, Bell, Shield, Smartphone, Heart, Sparkles, RefreshCw, ChevronRight, CheckCircle2, Clock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Input } from '../../../components/ui/Input';
+import { api } from '../../../api';
 import { cn } from '../../../lib/utils';
 
 export function SettingsSection() {
-  const { childName, childAvatar, resetData, wakeUpSettings, setWakeUpTargetTime } = useKiddoApp();
-  
-  // Custom states
-  const [parentName, setParentName] = useState('Sarah Smith');
-  const [parentEmail, setParentEmail] = useState('sarah@family.com');
+  const {
+    role,
+    childId,
+    childName,
+    childAvatar,
+    addNotification,
+    resetData,
+    wakeUpSettings,
+    setWakeUpTargetTime,
+  } = useKiddoApp();
+
+  // Child profile — initialised from the live profile and kept in sync when it loads.
   const [cName, setCName] = useState(childName);
   const [cAvatar, setCAvatar] = useState(childAvatar);
-  const [cAge, setCAge] = useState('8');
-  
+  const [cAge, setCAge] = useState(
+    () => localStorage.getItem('kiddo_onboarding_child_age') ?? '',
+  );
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  useEffect(() => {
+    setCName(childName);
+    setCAvatar(childAvatar);
+  }, [childName, childAvatar]);
+
   // Settings switches
   const [emailDigest, setEmailDigest] = useState(true);
   const [pushApprovals, setPushApprovals] = useState(true);
@@ -25,20 +41,32 @@ export function SettingsSection() {
 
   const avatars = ['🦊', '🐱', '🐼', '🦁', '🦄', '🐨', '🦖', '🐝'];
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem('kiddo_onboarding_child_name', cName);
-    localStorage.setItem('kiddo_onboarding_child_avatar', cAvatar);
-    localStorage.setItem('kiddo_onboarding_child_age', cAge);
-    alert('Profile settings saved successfully!');
-    window.location.reload();
+    setSavingProfile(true);
+    try {
+      // Parents save the child profile through the API; the explorer preview
+      // mode keeps the change local only.
+      if (role === 'parent' && childId) {
+        await api.patch(`/auth/children/${childId}`, {
+          firstName: cName.trim(),
+          avatar: cAvatar,
+        });
+      }
+      localStorage.setItem('kiddo_onboarding_child_name', cName.trim());
+      localStorage.setItem('kiddo_onboarding_child_avatar', cAvatar);
+      localStorage.setItem('kiddo_onboarding_child_age', cAge);
+      addNotification('Profile saved', 'Your explorer profile was updated.');
+    } catch (err: any) {
+      alert(err?.message ?? 'Could not save the profile. Please try again.');
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   const triggerReset = () => {
-    if (confirm('Are you sure you want to reset all mock tasks, rewards, and achievements to defaults?')) {
+    if (confirm('Reload your family data from the KidDo server? Local demo state will be refreshed.')) {
       resetData();
-      alert('Application simulation reset.');
-      window.location.reload();
     }
   };
 
@@ -109,8 +137,13 @@ export function SettingsSection() {
                 </div>
               </div>
 
-              <Button type="submit" className="px-8 h-12 rounded-xl bg-brand-navy shadow-xl shadow-brand-navy/10">
-                Save Profile Changes
+              <Button
+                type="submit"
+                isLoading={savingProfile}
+                disabled={savingProfile}
+                className="px-8 h-12 rounded-xl bg-brand-navy shadow-xl shadow-brand-navy/10"
+              >
+                {savingProfile ? 'Saving...' : 'Save Profile Changes'}
               </Button>
             </form>
           </Card>
@@ -257,18 +290,18 @@ export function SettingsSection() {
             <CardHeader className="p-0 mb-4">
               <CardTitle className="text-xl text-rose-600 flex items-center gap-2">
                 <RefreshCw size={18} />
-                Simulator
+                Data Refresh
               </CardTitle>
             </CardHeader>
             <p className="text-xs text-brand-muted font-medium leading-relaxed mb-6">
-              Running in local sandbox simulation. Clear cache memory to restore onboarding and sample tasks.
+              Reload tasks, rewards, points and approvals from the KidDo server.
             </p>
             <Button
               variant="outline"
               onClick={triggerReset}
               className="w-full bg-white hover:bg-rose-50 border-rose-200 text-rose-600 h-12 rounded-xl text-xs font-bold border-2 shadow-sm"
             >
-              Clear Cache & Reset
+              Reload Data
             </Button>
           </Card>
 

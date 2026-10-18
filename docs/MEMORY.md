@@ -38,6 +38,18 @@
 - `src/components/ui/Card.tsx`: added `variant` prop (default|premium)
 - JetBrains Mono font included
 
+### App releases (APKs + in-app updates)
+- `scripts/sync-app-builds.mjs` (`npm run apps:sync`) copies the newest release APKs from
+  `../kiddo-child-app` and `../kiddo-parent-app` into `public/` and writes two files:
+  - `public/app-releases.json` — release manifest the mobile apps poll for updates
+  - `src/lib/app-releases.json` — version/build-date/size labels used by the download pages
+- Download pages (`/download`, `ChildSection`, `ParentSection`) show a "Latest build" badge plus
+  `v<version> · Updated <date> · <size>` from `src/lib/site-config.ts` helpers.
+- The manifest serves `<site>/app-releases.json`; `SITE_URL`/`APP_RELEASES_URL` on the app side
+  control which document is read (defaults to `https://kiddoapp.in/app-releases.json`).
+- Version labels come from each app's `pubspec.yaml` (`version: 1.0.1+2`), so bump the pubspec
+  before building a release that should be offered as an update.
+
 ### Configuration
 - `next.config.ts`: env-driven rewrites (`API_PROXY_TARGET`), `turbopack.root`
 - `.env.development`, `.env.production`, `.env.example`: all API URLs env-driven

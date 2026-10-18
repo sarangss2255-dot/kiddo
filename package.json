@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "openapi:sync": "node scripts/sync-openapi.mjs"
+    "openapi:sync": "node scripts/sync-openapi.mjs",
+    "apps:sync": "node scripts/sync-app-builds.mjs"
   },
   "dependencies": {
     "@codemirror/lang-json": "^6.0.2",

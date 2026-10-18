@@ -302,7 +302,7 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
   const storedName =
     (typeof window !== 'undefined'
       ? localStorage.getItem('kiddo_onboarding_child_name')
-      : null) || 'LEO';
+      : null) || 'Explorer';
   const storedAvatar =
     (typeof window !== 'undefined'
       ? localStorage.getItem('kiddo_onboarding_child_avatar')
@@ -443,7 +443,7 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                               required
                               value={parentName}
                               onChange={(event) => setParentName(event.target.value)}
-                              placeholder="Sarah"
+                              placeholder="Enter your name"
                               className="h-12"
                             />
                           </div>
@@ -455,7 +455,7 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                               required
                               value={familyName}
                               onChange={(event) => setFamilyName(event.target.value)}
-                              placeholder="The Johnsons"
+                              placeholder="Your family name"
                               className="h-12"
                             />
                           </div>
@@ -473,7 +473,7 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                             required
                             value={email}
                             onChange={(event) => setEmail(event.target.value)}
-                            placeholder="name@family.com"
+                            placeholder="you@example.com"
                             className="h-12 pl-10"
                           />
                         </div>
@@ -651,7 +651,7 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                           required
                           value={childName}
                           onChange={(event) => setChildName(event.target.value)}
-                          placeholder="Leo"
+                          placeholder="Child's name"
                           className="h-12"
                         />
                       </div>

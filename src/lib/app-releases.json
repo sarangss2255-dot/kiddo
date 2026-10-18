@@ -1,0 +1,18 @@
+{
+  "child": {
+    "label": "Child App",
+    "version": "1.0.1",
+    "buildNumber": 2,
+    "buildDate": "2026-10-18",
+    "sizeBytes": 72269493,
+    "publicFile": "kiddo-child-app.apk"
+  },
+  "parent": {
+    "label": "Parent App",
+    "version": "1.0.1",
+    "buildNumber": 2,
+    "buildDate": "2026-10-18",
+    "sizeBytes": 59293812,
+    "publicFile": "kiddo-parent-app.apk"
+  }
+}

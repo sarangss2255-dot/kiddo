@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import { motion } from 'motion/react';
 import {
   Star,
   GraduationCap,
@@ -295,7 +298,14 @@ function DashboardScreen() {
                 </div>
               </div>
               <div className="mt-3 h-2 rounded-full bg-slate-200 overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: '60%', backgroundColor: colors.orange }} />
+                <motion.div
+                  className="h-full rounded-full"
+                  initial={{ width: 0 }}
+                  whileInView={{ width: '60%' }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 1.1, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                  style={{ backgroundColor: colors.orange }}
+                />
               </div>
               <div className="mt-2 flex items-center justify-between text-[10px] font-bold" style={{ color: colors.muted }}>
                 <span>3 / 5 completed today</span>

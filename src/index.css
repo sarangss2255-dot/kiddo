@@ -30,6 +30,12 @@
   --animate-float-slow: float 9s var(--ease-premium) infinite;
   --animate-slide-in-bottom: slide-in-bottom 1s var(--ease-premium);
   --animate-slide-in-right: slide-in-right 1s var(--ease-premium);
+  --animate-drift: drift 16s var(--ease-premium) infinite;
+  --animate-drift-slow: drift 24s var(--ease-premium) infinite reverse;
+  --animate-shine: shine 1.1s var(--ease-premium);
+  --animate-pulse-ring: pulse-ring 2.4s var(--ease-premium) infinite;
+  --animate-gradient-x: gradient-x 6s ease infinite;
+  --animate-glow: glow 5s ease-in-out infinite;
 
   @keyframes fade-in {
     from { opacity: 0; transform: translateY(40px); }
@@ -50,6 +56,26 @@
   @keyframes slide-in-right {
     from { opacity: 0; transform: translateX(20px); }
     to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes drift {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(26px, -22px, 0) scale(1.08); }
+  }
+  @keyframes shine {
+    from { transform: translateX(-130%) skewX(-14deg); }
+    to { transform: translateX(230%) skewX(-14deg); }
+  }
+  @keyframes pulse-ring {
+    0% { transform: scale(0.85); opacity: 0.6; }
+    70%, 100% { transform: scale(1.9); opacity: 0; }
+  }
+  @keyframes gradient-x {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  @keyframes glow {
+    0%, 100% { opacity: 0.18; }
+    50% { opacity: 0.34; }
   }
 }
 
@@ -206,5 +232,17 @@
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Respect users who prefer reduced motion: keep the UI functional and calm. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 

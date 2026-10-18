@@ -3,7 +3,7 @@ import { ClipboardList, TrendingUp, Lock, Check, Download } from 'lucide-react';
 import { Card } from '@/src/components/ui/Card';
 import { Badge } from '@/src/components/ui/Badge';
 import { Button } from '@/src/components/ui/Button';
-import { PARENT_APP_APK_URL } from '@/src/lib/site-config';
+import { PARENT_APP_APK_URL, PARENT_APP_RELEASE, formatReleaseMeta } from '@/src/lib/site-config';
 import { Reveal } from './Reveal';
 
 const benefits = [
@@ -102,6 +102,9 @@ export function ParentSection() {
                 </Button>
                 <p className="mt-3 text-[13px] font-medium text-kiddo-muted">
                   Android APK · Free for KidDo families
+                </p>
+                <p className="mt-1 text-[12px] font-semibold text-kiddo-muted/80">
+                  {formatReleaseMeta(PARENT_APP_RELEASE)}
                 </p>
               </div>
             </div>

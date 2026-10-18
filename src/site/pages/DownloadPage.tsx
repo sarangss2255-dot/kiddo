@@ -1,10 +1,28 @@
 import Link from 'next/link';
-import { Apple, Check, Download, QrCode, ShieldCheck, Smartphone, TabletSmartphone, Users } from 'lucide-react';
+import { Apple, Check, Download, QrCode, ShieldCheck, Smartphone, Sparkles, TabletSmartphone, Users } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
-import { CHILD_APP_APK_URL, PARENT_APP_APK_URL } from '../../lib/site-config';
+import {
+  CHILD_APP_APK_URL,
+  CHILD_APP_RELEASE,
+  PARENT_APP_APK_URL,
+  PARENT_APP_RELEASE,
+  formatReleaseMeta,
+} from '../../lib/site-config';
 import { Reveal } from '../components/Reveal';
+
+function LatestBuildBadge() {
+  return (
+    <Badge
+      variant="success"
+      className="shrink-0 gap-1 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide"
+    >
+      <Sparkles className="h-3 w-3" />
+      Latest build
+    </Badge>
+  );
+}
 
 export function DownloadPage() {
   return (
@@ -47,9 +65,15 @@ export function DownloadPage() {
                     <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-kiddo-orange/15 text-kiddo-orange">
                       <Smartphone className="h-5 w-5" />
                     </span>
-                    <h2 className="mt-4 text-lg font-extrabold text-kiddo-navy">Child App</h2>
+                    <div className="mt-4 flex items-center justify-between gap-3">
+                      <h2 className="text-lg font-extrabold text-kiddo-navy">Child App</h2>
+                      <LatestBuildBadge />
+                    </div>
                     <p className="mt-1.5 text-[14px] leading-relaxed text-kiddo-muted">
                       Missions, streaks, mini games and rewards for your child.
+                    </p>
+                    <p className="mt-3 text-[13px] font-semibold text-kiddo-muted">
+                      {formatReleaseMeta(CHILD_APP_RELEASE)}
                     </p>
                     <Button asChild size="lg" variant="accent" className="mt-5 w-full">
                       <a href={CHILD_APP_APK_URL} download>
@@ -65,9 +89,15 @@ export function DownloadPage() {
                     <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-kiddo-sky/20 text-kiddo-blue">
                       <Users className="h-5 w-5" />
                     </span>
-                    <h2 className="mt-4 text-lg font-extrabold text-kiddo-navy">Parent App</h2>
+                    <div className="mt-4 flex items-center justify-between gap-3">
+                      <h2 className="text-lg font-extrabold text-kiddo-navy">Parent App</h2>
+                      <LatestBuildBadge />
+                    </div>
                     <p className="mt-1.5 text-[14px] leading-relaxed text-kiddo-muted">
                       Approvals, routines, school progress and parent controls.
+                    </p>
+                    <p className="mt-3 text-[13px] font-semibold text-kiddo-muted">
+                      {formatReleaseMeta(PARENT_APP_RELEASE)}
                     </p>
                     <Button asChild size="lg" className="mt-5 w-full">
                       <a href={PARENT_APP_APK_URL} download>
@@ -109,7 +139,7 @@ export function DownloadPage() {
                   <span className="text-sm font-bold uppercase tracking-wide text-kiddo-blue">Install flow</span>
                   <div className="mt-6 space-y-4">
                     {[
-                      'Pick the child or parent app and download the APK.',
+                      'Pick the child or parent app and download the latest APK.',
                       'Allow installation when Android prompts.',
                       'Sign in with the family account and select the workspace.',
                     ].map((item, index) => (

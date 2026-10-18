@@ -87,7 +87,7 @@ describe('PublicLandingPage', () => {
     expect(screen.getByText('Log in to KidDo')).toBeTruthy();
     expect(screen.getByText(/an adventure/i)).toBeTruthy();
     expect(screen.getByText('Continue with Google')).toBeTruthy();
-    expect(screen.getByPlaceholderText('name@family.com')).toBeTruthy();
+    expect(screen.getByPlaceholderText('you@example.com')).toBeTruthy();
     expect(screen.getByText(/magic code/i)).toBeTruthy();
     expect(screen.getByText('Create a family account')).toBeTruthy();
     expect(screen.getByText(/Back to home/i)).toBeTruthy();
@@ -125,5 +125,14 @@ describe('PublicLandingPage', () => {
     expect(screen.getByText('Download Parent App')).toBeTruthy();
     expect(screen.getByText(/iOS — coming soon/i)).toBeTruthy();
     expect(screen.getByText(/Scan to install/i)).toBeTruthy();
+  });
+
+  it('labels both app downloads as the latest build with version info', () => {
+    render(<DownloadPage />);
+
+    // One "Latest build" badge per app card
+    expect(screen.getAllByText('Latest build')).toHaveLength(2);
+    // Version / build date / size line per app card
+    expect(screen.getAllByText(/v\d+\.\d+\.\d+ · Updated .+ · [\d.]+ MB/)).toHaveLength(2);
   });
 });

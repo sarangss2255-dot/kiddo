@@ -17,14 +17,9 @@ export function DashboardParent() {
   const { 
     tasks, approveTask, rejectTask, 
     rewards, approveRewardClaim, stars, 
-    streak, level, childName, childAvatar, notifications,
+    streak, level, parentName, childName, childAvatar, notifications,
     weeklySchedule, updateScheduleDay, isTodaySchoolDay
   } = useKiddoApp();
-
-  const [familyGoals, setFamilyGoals] = useState([
-    { id: '1', title: 'Weekend Zoo Trip Adventure', progress: 120, target: 200, category: 'family' },
-    { id: '2', title: 'New Lego Castle Set', progress: 85, target: 120, category: 'Leo' }
-  ]);
 
   // Tasks needing review
   const pendingTasks = tasks.filter(t => t.status === 'review');
@@ -38,24 +33,55 @@ export function DashboardParent() {
     ? Math.round(((completedTasks.length) / totalTodayTasks) * 100) 
     : 0;
 
-  // Mock chart data for weekly completions
-  const weeklyData = [
-    { day: 'Mon', completed: 4 },
-    { day: 'Tue', completed: 6 },
-    { day: 'Wed', completed: 5 },
-    { day: 'Thu', completed: 7 },
-    { day: 'Fri', completed: 3 },
-    { day: 'Sat', completed: 8 },
-    { day: 'Sun', completed: completedTasks.length + 3 }
-  ];
+  // Real family goals: active rewards the family is saving stars for.
+  const familyGoals = rewards
+    .filter((reward) => reward.status === 'active')
+    .slice(0, 3)
+    .map((reward) => ({
+      id: reward.id,
+      title: reward.title,
+      progress: Math.min(stars, reward.cost),
+      target: reward.cost,
+      category: reward.category,
+    }));
 
-  // Kids Growth Dimension Radar Data
+  // Completed vs total missions per category (real task data).
+  const categoryStats = [
+    { key: 'chores', label: 'Chores' },
+    { key: 'homework', label: 'Homework' },
+    { key: 'learning', label: 'Learning' },
+    { key: 'morning', label: 'Mornings' },
+    { key: 'bedtime', label: 'Bedtime' },
+    { key: 'other', label: 'Other' },
+  ];
+  const weeklyData = categoryStats.map(({ key, label }) => {
+    const categoryTasks = tasks.filter((task) => task.category === key);
+    return {
+      day: label,
+      completed: categoryTasks.filter((task) => task.status === 'completed').length,
+      total: categoryTasks.length,
+    };
+  });
+  const peakIndex = weeklyData.reduce(
+    (best, entry, index) => (entry.completed > weeklyData[best].completed ? index : best),
+    0,
+  );
+
+  const categoryProgress = (keys: string[]) => {
+    const relevant = tasks.filter((task) => keys.includes(task.category));
+    if (relevant.length === 0) return 0;
+    return Math.round(
+      (relevant.filter((task) => task.status === 'completed').length / relevant.length) * 100,
+    );
+  };
+
+  // Development index derived from real completion rates per category group.
   const growthData = [
-    { subject: 'Chores 🧹', value: 80, fullMark: 100 },
-    { subject: 'Study 📚', value: 95, fullMark: 100 },
-    { subject: 'Mornings 🌅', value: 70, fullMark: 100 },
-    { subject: 'Bedtime 🛌', value: 85, fullMark: 100 },
-    { subject: 'Fitness 🧠', value: 90, fullMark: 100 },
+    { subject: 'Chores 🧹', value: categoryProgress(['chores']), fullMark: 100 },
+    { subject: 'Study 📚', value: categoryProgress(['homework', 'learning']), fullMark: 100 },
+    { subject: 'Mornings 🌅', value: categoryProgress(['morning']), fullMark: 100 },
+    { subject: 'Bedtime 🛌', value: categoryProgress(['bedtime']), fullMark: 100 },
+    { subject: 'Fitness 🧠', value: categoryProgress(['other']), fullMark: 100 },
   ];
 
   return (
@@ -67,7 +93,7 @@ export function DashboardParent() {
           <Badge variant="accent" className="px-3 py-1 mb-2 font-bold bg-amber-100 text-amber-800 border-none rounded-full">
             Family Portal
           </Badge>
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-800">Hello, Sarah!</h1>
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-800">Hello, {parentName}!</h1>
           <p className="text-base text-slate-500 mt-2 font-medium">Here's a snapshot of your family's productivity today.</p>
         </div>
         <div className="flex items-center gap-3 bg-white p-2 px-4 rounded-2xl border border-slate-100 shadow-sm">
@@ -153,7 +179,7 @@ export function DashboardParent() {
               <div className="text-4xl font-extrabold text-slate-800">{completedTasks.length}</div>
             </div>
             <p className="text-[10px] text-emerald-600 font-bold mt-4 flex items-center gap-1">
-              <TrendingUp size={12} /> +2 from yesterday
+              <TrendingUp size={12} /> {completedTasks.length} of {totalTodayTasks} missions complete
             </p>
           </Card>
         </motion.div>
@@ -335,9 +361,9 @@ export function DashboardParent() {
               <CardHeader>
                 <CardTitle className="text-lg font-bold flex items-center gap-2">
                   <TrendingUp className="text-emerald-500" size={18} />
-                  Mission velocity
+                  Missions by Category
                 </CardTitle>
-                <CardDescription>Daily task completion rate over the past week</CardDescription>
+                <CardDescription>Completed missions per category (live data)</CardDescription>
               </CardHeader>
               <CardContent className="p-6 flex items-center justify-center">
                 <div className="h-64 w-full">
@@ -357,7 +383,7 @@ export function DashboardParent() {
                       />
                       <Bar dataKey="completed" radius={[6, 6, 0, 0]}>
                         {weeklyData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={index === 6 ? '#4FC3F7' : '#1B3A4B'} fillOpacity={index === 6 ? 1 : 0.15} />
+                          <Cell key={`cell-${index}`} fill={index === peakIndex ? '#4FC3F7' : '#1B3A4B'} fillOpacity={index === peakIndex ? 1 : 0.15} />
                         ))}
                       </Bar>
                     </BarChart>
@@ -379,7 +405,7 @@ export function DashboardParent() {
                       <PolarGrid stroke="#F1F5F9" />
                       <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fontWeight: 700, fill: '#475569' }} />
                       <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 9, fill: '#94A3B8' }} />
-                      <Radar name="Leo" dataKey="value" stroke="#4FC3F7" fill="#4FC3F7" fillOpacity={0.25} />
+                      <Radar name={childName} dataKey="value" stroke="#4FC3F7" fill="#4FC3F7" fillOpacity={0.25} />
                     </RadarChart>
                   </ResponsiveContainer>
                 </div>
@@ -396,11 +422,11 @@ export function DashboardParent() {
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <div className={cn(
                     "w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-sm shrink-0",
-                    goal.category === 'family' ? "bg-sky-50 text-sky-600" : "bg-orange-50 text-orange-600"
+                    goal.category === 'activity' ? "bg-sky-50 text-sky-600" : "bg-orange-50 text-orange-600"
                   )}>
-                    {goal.category === 'family' ? <Users size={18} /> : <Target size={18} />}
+                    {goal.category === 'activity' ? <Users size={18} /> : <Target size={18} />}
                   </div>
-                  <Badge variant={goal.category === 'family' ? 'default' : 'secondary'} className="capitalize rounded-full font-bold">
+                  <Badge variant="secondary" className="capitalize rounded-full font-bold">
                     {goal.category}
                   </Badge>
                 </CardHeader>
@@ -413,7 +439,7 @@ export function DashboardParent() {
                     </div>
                     <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
                       <div 
-                        className={cn("h-full rounded-full transition-all duration-1000", goal.category === 'family' ? "bg-sky-400" : "bg-orange-400")} 
+                        className={cn("h-full rounded-full transition-all duration-1000", goal.category === 'activity' ? "bg-sky-400" : "bg-orange-400")} 
                         style={{ width: `${(goal.progress / goal.target) * 100}%` }}
                       />
                     </div>

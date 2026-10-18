@@ -194,7 +194,7 @@ export function TeachersPage() {
               <Label htmlFor="fullName" className="font-semibold text-slate-600">Full Name</Label>
               <Input
                 id="fullName"
-                placeholder="Dr. Sarah Jenkins"
+                        placeholder="Full name"
                 value={form.fullName}
                 onChange={e => setForm(s => ({ ...s, fullName: e.target.value }))}
                 className="border-slate-200"

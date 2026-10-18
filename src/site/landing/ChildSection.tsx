@@ -4,7 +4,7 @@ import { PhoneDashboard } from './PhoneDashboard';
 import { Compass, UserCircle, Gift, Trophy, Flame, Gamepad2, Download } from 'lucide-react';
 import { Badge } from '@/src/components/ui/Badge';
 import { Button } from '@/src/components/ui/Button';
-import { CHILD_APP_APK_URL } from '@/src/lib/site-config';
+import { CHILD_APP_APK_URL, CHILD_APP_RELEASE, formatReleaseMeta } from '@/src/lib/site-config';
 import { Reveal } from './Reveal';
 
 const childFeatures = [
@@ -65,6 +65,9 @@ export function ChildSection() {
                 </Button>
                 <p className="mt-3 text-[13px] font-medium text-kiddo-muted">
                   Android APK · Free for KidDo families
+                </p>
+                <p className="mt-1 text-[12px] font-semibold text-kiddo-muted/80">
+                  {formatReleaseMeta(CHILD_APP_RELEASE)}
                 </p>
               </div>
             </div>
