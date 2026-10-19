@@ -1,5 +1,6 @@
 import React from 'react';
 import { Reveal } from './Reveal';
+import { ParticleField } from './ParticleField';
 
 const steps = [
   {
@@ -21,8 +22,10 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="scroll-mt-24 py-16 md:py-24 bg-kiddo-warm">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="how-it-works" className="relative scroll-mt-24 py-16 md:py-24 bg-kiddo-warm overflow-hidden">
+      <ParticleField className="absolute inset-0" count={42} />
+
+      <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
         <Reveal>
           <div className="text-center mb-14">
             <h2 className="text-[32px] md:text-[44px] font-bold tracking-tight text-kiddo-navy">

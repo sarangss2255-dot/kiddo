@@ -6,6 +6,7 @@ import {
   AccordionTrigger,
 } from '@/src/components/ui/Accordion';
 import { Reveal } from './Reveal';
+import { ParticleField } from './ParticleField';
 
 const faqs = [
   {
@@ -36,8 +37,10 @@ const faqs = [
 
 export function FAQ() {
   return (
-    <section id="faq" className="py-16 md:py-24 bg-kiddo-warm">
-      <div className="max-w-[800px] mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="faq" className="relative py-16 md:py-24 bg-kiddo-warm overflow-hidden">
+      <ParticleField className="absolute inset-0" count={40} />
+
+      <div className="relative max-w-[800px] mx-auto px-4 sm:px-6 lg:px-8">
         <Reveal>
           <div className="text-center mb-12">
             <h2 className="text-[32px] md:text-[44px] font-bold tracking-tight text-kiddo-navy">

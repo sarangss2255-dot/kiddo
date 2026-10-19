@@ -3,6 +3,7 @@ import { Shield, UserCog, Link2, UserCheck, MessageSquareLock, UsersRound } from
 import { Card } from '@/src/components/ui/Card';
 import { Badge } from '@/src/components/ui/Badge';
 import { Reveal } from './Reveal';
+import { ParticleField } from './ParticleField';
 
 const safetyItems = [
   {
@@ -39,8 +40,10 @@ const safetyItems = [
 
 export function SafetySection() {
   return (
-    <section id="safety" className="py-16 md:py-24 bg-kiddo-warm">
-      <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="safety" className="relative py-16 md:py-24 bg-kiddo-warm overflow-hidden">
+      <ParticleField className="absolute inset-0" count={46} />
+
+      <div className="relative max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
         <Reveal>
           <div className="text-center max-w-[640px] mx-auto mb-12 md:mb-16">
             <Badge variant="mint" className="px-3.5 py-1.5 text-xs">

@@ -6,6 +6,7 @@ import { Button } from '@/src/components/ui/Button';
 import { PARENT_APP_APK_URL, PARENT_APP_RELEASE, formatReleaseMeta } from '@/src/lib/site-config';
 import { AppIcon } from '@/src/components/brand/AppIcon';
 import { Reveal } from './Reveal';
+import { ParticleField } from './ParticleField';
 
 const benefits = [
   {
@@ -35,8 +36,10 @@ const benefitPoints = [
 
 export function ParentSection() {
   return (
-    <section id="parents" className="py-16 md:py-24 bg-kiddo-sky/10">
-      <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="parents" className="relative py-16 md:py-24 bg-kiddo-sky/10 overflow-hidden">
+      <ParticleField className="absolute inset-0" count={46} />
+
+      <div className="relative max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <Reveal>
             <div className="relative">

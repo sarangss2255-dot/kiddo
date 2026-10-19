@@ -24,22 +24,23 @@ type Particle = {
   r: number;
   color: string;
   alpha: number;
+  phase: number;
 };
 
 const PALETTES = {
   light: {
     dots: ['#4FC3F7', '#FFB74D', '#81C784', '#1B3A4B'],
-    dotAlpha: [0.22, 0.5] as const,
-    link: 'rgba(27,58,75,0.10)',
-    hoverLink: 'rgba(79,195,247,0.55)',
-    halo: 'rgba(79,195,247,0.16)',
+    dotAlpha: [0.45, 0.85] as const,
+    link: 'rgba(27,58,75,0.16)',
+    hoverLink: 'rgba(79,195,247,0.75)',
+    halo: 'rgba(79,195,247,0.22)',
   },
   dark: {
     dots: ['#87CEEB', '#FFB74D', '#81C784', '#FFFFFF'],
-    dotAlpha: [0.25, 0.6] as const,
-    link: 'rgba(255,255,255,0.12)',
-    hoverLink: 'rgba(135,206,235,0.65)',
-    halo: 'rgba(135,206,235,0.18)',
+    dotAlpha: [0.4, 0.9] as const,
+    link: 'rgba(255,255,255,0.2)',
+    hoverLink: 'rgba(135,206,235,0.85)',
+    halo: 'rgba(135,206,235,0.26)',
   },
 } as const;
 
@@ -57,10 +58,10 @@ const rand = (min: number, max: number) => min + Math.random() * (max - min);
 export function ParticleField({
   className = '',
   variant = 'light',
-  count = 46,
-  hoverRadius = 140,
+  count = 64,
+  hoverRadius = 150,
   connect = true,
-  linkDistance = 120,
+  linkDistance = 130,
 }: ParticleFieldProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -78,6 +79,7 @@ export function ParticleField({
     let particles: Particle[] = [];
     let raf = 0;
     let lastTime = 0;
+    let clock = 0;
     let inView = true;
     let visible = !document.hidden;
 
@@ -89,15 +91,16 @@ export function ParticleField({
     const spawn = (): Particle => ({
       x: Math.random() * width,
       y: Math.random() * height,
-      vx: rand(-0.18, 0.18),
-      vy: rand(-0.18, 0.18),
-      r: rand(1.3, 3.1),
+      vx: rand(-0.22, 0.22),
+      vy: rand(-0.22, 0.22),
+      r: rand(1.7, 4.2),
       color: palette.dots[Math.floor(Math.random() * palette.dots.length)],
       alpha: rand(palette.dotAlpha[0], palette.dotAlpha[1]),
+      phase: Math.random() * Math.PI * 2,
     });
 
     const seed = () => {
-      const target = Math.max(16, Math.min(count, Math.round((width * height) / 24000)));
+      const target = Math.max(16, Math.min(count, Math.round((width * height) / 15000)));
       particles = Array.from({ length: target }, spawn);
     };
 
@@ -117,6 +120,7 @@ export function ParticleField({
     const paint = (dt: number) => {
       ctx.clearRect(0, 0, width, height);
       const step = Math.min(dt, 50) / 16.67;
+      clock += dt;
 
       // Eased cursor halo.
       if (pointer.active) {
@@ -205,7 +209,8 @@ export function ParticleField({
 
       // Dots (drawn last so they stay crisp above the links).
       for (const p of particles) {
-        ctx.globalAlpha = p.alpha;
+        const twinkle = reduceMotion ? 1 : 0.72 + 0.28 * Math.sin(clock * 0.0016 + p.phase);
+        ctx.globalAlpha = Math.min(1, p.alpha * twinkle);
         ctx.fillStyle = p.color;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);

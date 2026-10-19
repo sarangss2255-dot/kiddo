@@ -40,7 +40,7 @@ export function AppPreview() {
             <Reveal key={preview.label} delay={index * 0.1}>
               <div className="text-center">
                 {/* Device frame */}
-                <div className="mx-auto w-[92%] max-w-[250px] rounded-[36px] p-[7px] shadow-[0_30px_60px_-15px_rgba(27,58,75,0.25)]"
+                <div className="mx-auto w-[92%] max-w-[270px] rounded-[36px] p-[7px] shadow-[0_30px_60px_-15px_rgba(27,58,75,0.25)]"
                   style={{ background: 'linear-gradient(145deg, #3a3a3a, #111)' }}
                 >
                   <div className="relative aspect-[9/19.5] overflow-hidden rounded-[30px]">

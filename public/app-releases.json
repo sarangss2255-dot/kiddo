@@ -1,21 +1,21 @@
 {
-  "generatedAt": "2026-10-19T08:35:56.552Z",
+  "generatedAt": "2026-10-19T16:13:36.181Z",
   "apps": {
     "child": {
       "label": "Child App",
-      "version": "1.0.2",
-      "buildNumber": 3,
+      "version": "1.0.3",
+      "buildNumber": 4,
       "buildDate": "2026-10-19",
-      "sizeBytes": 72269537,
+      "sizeBytes": 72302665,
       "downloadUrl": "https://kiddoapp.in/kiddo-child-app.apk",
       "forceUpdate": false
     },
     "parent": {
       "label": "Parent App",
-      "version": "1.0.2",
-      "buildNumber": 3,
+      "version": "1.0.3",
+      "buildNumber": 4,
       "buildDate": "2026-10-19",
-      "sizeBytes": 59392056,
+      "sizeBytes": 59850808,
       "downloadUrl": "https://kiddoapp.in/kiddo-parent-app.apk",
       "forceUpdate": false
     }
