@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Apple, Check, Download, QrCode, ShieldCheck, Smartphone, Sparkles, TabletSmartphone, Users } from 'lucide-react';
+import { Apple, Check, Download, QrCode, ShieldCheck, Smartphone, Sparkles, TabletSmartphone } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
@@ -11,6 +11,8 @@ import {
   formatReleaseMeta,
 } from '../../lib/site-config';
 import { Reveal } from '../components/Reveal';
+import { BrandLogo } from '../../components/brand/BrandLogo';
+import { AppIcon } from '../../components/brand/AppIcon';
 
 function LatestBuildBadge() {
   return (
@@ -29,9 +31,8 @@ export function DownloadPage() {
     <div className="min-h-screen bg-kiddo-warm">
       <div className="mx-auto flex min-h-screen w-full max-w-[1240px] flex-col px-4 py-6 md:px-6 lg:px-8">
         <header className="flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <img src="/kiddo-logo-64.png" alt="" className="h-9 w-9 rounded-xl shadow-sm" />
-            <span className="text-[22px] font-extrabold tracking-tight text-kiddo-navy">KidDo</span>
+          <Link href="/" className="flex items-center">
+            <BrandLogo className="h-9" />
           </Link>
           <div className="flex items-center gap-2.5">
             <Button asChild variant="ghost" size="sm">
@@ -62,9 +63,7 @@ export function DownloadPage() {
               <div className="mx-auto mt-9 grid max-w-[720px] gap-4 sm:grid-cols-2">
                 <Card className="border-slate-200/80 bg-white text-left shadow-[0_18px_45px_-20px_rgba(27,58,75,0.18)]">
                   <CardContent className="p-6">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-kiddo-orange/15 text-kiddo-orange">
-                      <Smartphone className="h-5 w-5" />
-                    </span>
+                    <AppIcon app="child" className="h-14 w-14 rounded-2xl shadow-sm" />
                     <div className="mt-4 flex items-center justify-between gap-3">
                       <h2 className="text-lg font-extrabold text-kiddo-navy">Child App</h2>
                       <LatestBuildBadge />
@@ -86,9 +85,7 @@ export function DownloadPage() {
 
                 <Card className="border-slate-200/80 bg-white text-left shadow-[0_18px_45px_-20px_rgba(27,58,75,0.18)]">
                   <CardContent className="p-6">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-kiddo-sky/20 text-kiddo-blue">
-                      <Users className="h-5 w-5" />
-                    </span>
+                    <AppIcon app="parent" className="h-14 w-14" />
                     <div className="mt-4 flex items-center justify-between gap-3">
                       <h2 className="text-lg font-extrabold text-kiddo-navy">Parent App</h2>
                       <LatestBuildBadge />

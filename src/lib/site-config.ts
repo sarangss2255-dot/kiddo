@@ -20,6 +20,23 @@ export const PARENT_APP_APK_URL =
 
 export const SITE_NAME = process.env.NEXT_PUBLIC_SITE_NAME ?? 'KidDo';
 
+/**
+ * Single source of truth for brand artwork in /public.
+ * Import these instead of repeating asset paths across components.
+ */
+export const BRAND_ASSETS = {
+  logo: '/kiddo-logo.png',
+  logoMark: '/kiddo-logo-128.png',
+  favicon32: '/kiddo-logo-32.png',
+  favicon64: '/kiddo-logo-64.png',
+  favicon128: '/kiddo-logo-128.png',
+  favicon192: '/kiddo-logo-192.png',
+  appleTouchIcon: '/kiddo-logo-180.png',
+  ogImage: '/og-image.png',
+  childAppIcon: '/kiddo-child-app-icon.png',
+  parentAppIcon: '/kiddo-parent-app-icon.png',
+} as const;
+
 export type AppRelease = {
   label: string;
   version: string;

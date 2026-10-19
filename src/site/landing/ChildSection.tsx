@@ -5,6 +5,7 @@ import { Compass, UserCircle, Gift, Trophy, Flame, Gamepad2, Download } from 'lu
 import { Badge } from '@/src/components/ui/Badge';
 import { Button } from '@/src/components/ui/Button';
 import { CHILD_APP_APK_URL, CHILD_APP_RELEASE, formatReleaseMeta } from '@/src/lib/site-config';
+import { AppIcon } from '@/src/components/brand/AppIcon';
 import { Reveal } from './Reveal';
 
 const childFeatures = [
@@ -78,6 +79,17 @@ export function ChildSection() {
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[480px] rounded-full opacity-20 bg-kiddo-orange blur-[70px]" />
               <div className="relative animate-float-slow">
                 <PhoneDashboard />
+              </div>
+              <div className="absolute bottom-6 left-0 z-10 flex items-center gap-3 rounded-2xl border border-white/80 bg-white/95 px-3.5 py-3 shadow-[0_18px_40px_-18px_rgba(27,58,75,0.45)] backdrop-blur sm:-left-6">
+                <AppIcon app="child" className="h-11 w-11 rounded-xl shadow-sm" />
+                <div>
+                  <p className="text-[13px] font-extrabold text-kiddo-navy">
+                    {CHILD_APP_RELEASE.label}
+                  </p>
+                  <p className="text-[11px] font-semibold text-kiddo-muted">
+                    Missions &amp; rewards
+                  </p>
+                </div>
               </div>
             </div>
           </Reveal>

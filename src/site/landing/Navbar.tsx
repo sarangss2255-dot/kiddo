@@ -17,6 +17,8 @@ import {
   SheetClose,
 } from '@/src/components/ui/Sheet';
 import { cn } from '@/src/lib/utils';
+import { SITE_NAME } from '@/src/lib/site-config';
+import { BrandLogo } from '@/src/components/brand/BrandLogo';
 
 const navLinks = [
   { label: 'Features', href: '/#features' },
@@ -47,9 +49,8 @@ export function Navbar() {
     >
       <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-[68px]">
-          <Link href="/" className="flex items-center gap-2.5 shrink-0" aria-label="KidDo home">
-            <img src="/kiddo-logo-64.png" alt="" className="h-9 w-9 rounded-xl shadow-sm" />
-            <span className="text-[22px] font-extrabold tracking-tight text-kiddo-navy">KidDo</span>
+          <Link href="/" className="flex items-center shrink-0" aria-label={`${SITE_NAME} home`}>
+            <BrandLogo className="h-8 sm:h-9" />
           </Link>
 
           {/* Desktop nav */}
@@ -87,9 +88,8 @@ export function Navbar() {
               </SheetTrigger>
               <SheetContent side="right" className="w-[300px]">
                 <SheetHeader>
-                  <SheetTitle className="flex items-center gap-2">
-                    <img src="/kiddo-logo-64.png" alt="" className="h-8 w-8 rounded-lg" />
-                    KidDo
+                  <SheetTitle className="flex items-center">
+                    <BrandLogo className="h-8" />
                   </SheetTitle>
                 </SheetHeader>
                 <nav className="mt-6 flex flex-col gap-1">

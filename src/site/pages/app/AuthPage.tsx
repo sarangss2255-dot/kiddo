@@ -12,7 +12,6 @@ import {
   EyeOff,
   Lock,
   Mail,
-  Shield,
   Sparkles,
   Star,
   Users,
@@ -24,7 +23,17 @@ import { Label } from '../../../components/ui/Label';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Separator } from '../../../components/ui/Separator';
 import { Alert, AlertDescription } from '../../../components/ui/Alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../../../components/ui/Dialog';
+import { GoogleMark } from '../../../components/brand/GoogleMark';
 import { PhoneDashboard } from '../../landing/PhoneDashboard';
+import { BrandLogo } from '../../../components/brand/BrandLogo';
+import { AVATARS, DEFAULT_AVATAR, resolveAvatar } from '../../../lib/avatars';
 import { cn } from '../../../lib/utils';
 import { api } from '../../../api';
 import { auth, googleProvider } from '../../../firebase';
@@ -52,7 +61,40 @@ function isAdminAccountError(error: unknown): boolean {
   );
 }
 
-const avatars = ['FOX', 'PANDA', 'LION', 'KOALA', 'BEE', 'UNICORN', 'CAT', 'BEAR'];
+/** Firebase codes raised when the user simply closes the Google pop-up. */
+const POPUP_DISMISSED_CODES = new Set([
+  'auth/popup-closed-by-user',
+  'auth/cancelled-popup-request',
+  'auth/user-cancelled',
+]);
+
+function isGooglePopupDismissed(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    POPUP_DISMISSED_CODES.has((error as { code?: string }).code ?? '')
+  );
+}
+
+function splitDisplayName(displayName: string): { firstName: string; lastName: string } {
+  const parts = displayName.trim().split(/\s+/).filter(Boolean);
+  return { firstName: parts[0] || 'Parent', lastName: parts.slice(1).join(' ') };
+}
+
+/** Friendly default like "The Smith Family", derived from the Google name. */
+function suggestFamilyName(displayName: string): string {
+  const { firstName, lastName } = splitDisplayName(displayName);
+  return lastName ? `The ${lastName} Family` : `${firstName}'s Family`;
+}
+
+interface PendingGoogleSignup {
+  idToken: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  displayName: string;
+}
+
 const availableGoals = [
   { id: 'routines', label: 'Morning + bedtime routines' },
   { id: 'chores', label: 'Helping with chores' },
@@ -74,10 +116,16 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
   const [otp, setOtp] = useState(['', '', '', '']);
   const [childName, setChildName] = useState('');
   const [childAge, setChildAge] = useState('');
-  const [selectedAvatar, setSelectedAvatar] = useState('FOX');
+  const [selectedAvatar, setSelectedAvatar] = useState(DEFAULT_AVATAR);
   const [goals, setGoals] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // Google signup handshake: after the account is picked, the family name is
+  // asked for here so nothing has to be typed before "Sign up with Google".
+  const [pendingGoogleSignup, setPendingGoogleSignup] = useState<PendingGoogleSignup | null>(null);
+  const [familyPromptOpen, setFamilyPromptOpen] = useState(false);
+  const [familyDraft, setFamilyDraft] = useState('');
+  const [familyDraftError, setFamilyDraftError] = useState('');
 
   const ease: "linear" | [number, number, number, number] = prefersReducedMotion
     ? "linear"
@@ -208,6 +256,17 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
     }
   };
 
+  /** Finishes a Google signup once the family name has been chosen. */
+  const completeGoogleSignup = async (pending: PendingGoogleSignup, family: string) => {
+    const payload = await api.post('/auth/firebase', {
+      idToken: pending.idToken,
+      firstName: pending.firstName,
+      lastName: pending.lastName,
+      familyName: family,
+    });
+    await finishLogin(payload, { onboarding: true });
+  };
+
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError('');
@@ -215,16 +274,29 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
       const credential = await signInWithPopup(auth, googleProvider);
       const idToken = await credential.user.getIdToken();
       const displayName = credential.user.displayName?.trim() || 'Parent';
-      const [firstName, ...lastNameParts] = displayName.split(' ');
+      const { firstName, lastName } = splitDisplayName(displayName);
+
       try {
+        if (mode === 'signup' && familyName.trim().length < 2) {
+          // Google account first: the family name is asked for afterwards with
+          // a suggestion, so parents never hit a dead end mid-signup.
+          setPendingGoogleSignup({
+            idToken,
+            firstName,
+            lastName,
+            email: credential.user.email ?? '',
+            displayName,
+          });
+          setFamilyDraft(suggestFamilyName(displayName));
+          setFamilyDraftError('');
+          setFamilyPromptOpen(true);
+          return;
+        }
+
         const payload = await api.post('/auth/firebase', {
           idToken,
           ...(mode === 'signup'
-            ? {
-                firstName,
-                lastName: lastNameParts.join(' '),
-                familyName: familyName.trim() || `${firstName}'s Family`,
-              }
+            ? { firstName, lastName, familyName: familyName.trim() }
             : {}),
         });
         await finishLogin(payload, { onboarding: mode === 'signup' });
@@ -237,7 +309,38 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
         throw err;
       }
     } catch (err: any) {
-      setError(err?.message || 'Google sign-in failed. Check Firebase and backend configuration.');
+      if (isGooglePopupDismissed(err)) return; // user closed the pop-up
+      setError(err?.message || 'Google sign-in failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignupConfirm = async () => {
+    if (!pendingGoogleSignup) return;
+
+    const value = familyDraft.trim();
+    if (value.length < 2) {
+      setFamilyDraftError('Please use at least 2 characters.');
+      return;
+    }
+
+    setLoading(true);
+    setFamilyDraftError('');
+    try {
+      await completeGoogleSignup(pendingGoogleSignup, value);
+      setFamilyPromptOpen(false);
+      setPendingGoogleSignup(null);
+    } catch (err) {
+      if (isAdminAccountError(err)) {
+        try {
+          await finishAdminLogin(pendingGoogleSignup.idToken);
+        } catch {
+          setFamilyDraftError('This account belongs to the admin workspace and could not be opened.');
+        }
+        return;
+      }
+      setFamilyDraftError(err instanceof Error ? err.message : 'Unable to create your family. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -286,7 +389,8 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
       localStorage.setItem('kiddo_onboarding_child_name', childName);
       localStorage.setItem('kiddo_onboarding_child_age', childAge);
       localStorage.setItem('kiddo_onboarding_child_avatar', selectedAvatar);
-      setStep('role');
+      // Signup now lands on the parent dashboard instead of the workspace picker.
+      router.push('/app/parent');
     } catch (err: any) {
       setError(err?.message || 'Unable to add your child profile. Please try again.');
     } finally {
@@ -296,17 +400,40 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
 
   const handleSkipOnboarding = () => {
     setError('');
-    setStep('role');
+    router.push('/app/parent');
   };
 
   const storedName =
     (typeof window !== 'undefined'
       ? localStorage.getItem('kiddo_onboarding_child_name')
       : null) || 'Explorer';
-  const storedAvatar =
-    (typeof window !== 'undefined'
+  const storedAvatar = resolveAvatar(
+    typeof window !== 'undefined'
       ? localStorage.getItem('kiddo_onboarding_child_avatar')
-      : null) || 'FOX';
+      : null,
+  );
+
+  const googleAuthButton = (
+    <Button
+      type="button"
+      variant="outline"
+      size="xl"
+      className="w-full bg-white"
+      onClick={handleGoogleLogin}
+      disabled={loading}
+    >
+      <GoogleMark />
+      {mode === 'signup' ? 'Sign up with Google' : 'Continue with Google'}
+    </Button>
+  );
+
+  const googleSignupCaption =
+    mode === 'signup' ? (
+      <p className="mt-3 text-center text-[12.5px] leading-relaxed text-kiddo-muted">
+        No password needed — we&apos;ll use your Google name and email, then just give your family a
+        name.
+      </p>
+    ) : null;
 
   const isLoginStep = step === 'auth';
 
@@ -331,10 +458,9 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, ease }}
-            className="relative z-10 flex items-center gap-2.5"
+            className="relative z-10 flex items-center"
           >
-            <img src="/kiddo-logo-64.png" alt="" className="h-10 w-10 rounded-xl shadow-sm" />
-            <span className="text-2xl font-extrabold tracking-tight text-kiddo-navy">KidDo</span>
+            <BrandLogo className="h-10" />
           </motion.div>
 
           {/* Copy */}
@@ -397,9 +523,8 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
         <section className="relative flex flex-col bg-white">
           {/* Top bar: back to home */}
           <div className="flex items-center justify-between px-6 py-5 md:px-10">
-            <div className="md:hidden flex items-center gap-2">
-              <img src="/kiddo-logo-64.png" alt="" className="h-8 w-8 rounded-lg" />
-              <span className="text-xl font-extrabold tracking-tight text-kiddo-navy">KidDo</span>
+            <div className="md:hidden flex items-center">
+              <BrandLogo className="h-8" />
             </div>
             <Button asChild variant="ghost" size="sm" className="ml-auto">
               <Link href="/">← Back to home</Link>
@@ -431,8 +556,27 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                         : 'Enter your family dashboard, child missions, and the approval loop.'}
                     </p>
 
+                    {/* Signup: Google first — nothing has to be typed before it */}
+                    {mode === 'signup' ? (
+                      <div className="mt-8">
+                        {googleAuthButton}
+                        {googleSignupCaption}
+                        <div className="my-6 flex items-center gap-3">
+                          <Separator className="flex-1" />
+                          <span className="text-xs font-bold uppercase tracking-wide text-kiddo-muted">
+                            or sign up with email
+                          </span>
+                          <Separator className="flex-1" />
+                        </div>
+                      </div>
+                    ) : null}
+
                     {/* Form */}
-                    <form onSubmit={handleAuthSubmit} className="mt-8 space-y-5" noValidate={false}>
+                    <form
+                      onSubmit={handleAuthSubmit}
+                      className={cn('space-y-5', mode === 'login' && 'mt-8')}
+                      noValidate={false}
+                    >
                       {mode === 'signup' ? (
                         <>
                           <div className="space-y-2">
@@ -539,23 +683,20 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                       </Button>
                     </form>
 
-                    <div className="my-6 flex items-center gap-3">
-                      <Separator className="flex-1" />
-                      <span className="text-xs font-bold uppercase tracking-wide text-kiddo-muted">or</span>
-                      <Separator className="flex-1" />
-                    </div>
+                    {/* Login: email form first, Google below */}
+                    {mode === 'login' ? (
+                      <>
+                        <div className="my-6 flex items-center gap-3">
+                          <Separator className="flex-1" />
+                          <span className="text-xs font-bold uppercase tracking-wide text-kiddo-muted">
+                            or
+                          </span>
+                          <Separator className="flex-1" />
+                        </div>
 
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="xl"
-                      className="w-full bg-white"
-                      onClick={handleGoogleLogin}
-                      disabled={loading}
-                    >
-                      <Shield className="h-4 w-4 text-kiddo-blue" />
-                      {mode === 'signup' ? 'Sign up with Google' : 'Continue with Google'}
-                    </Button>
+                        {googleAuthButton}
+                      </>
+                    ) : null}
 
                     <p className="mt-7 text-center text-[15px] text-kiddo-muted">
                       {mode === 'signup' ? (
@@ -671,20 +812,27 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                     <div className="mt-6 space-y-3">
                       <Label>Select an avatar</Label>
                       <div className="grid grid-cols-4 gap-2.5">
-                        {avatars.map((avatar) => (
+                        {AVATARS.map((avatar) => (
                           <button
-                            key={avatar}
+                            key={avatar.id}
                             type="button"
-                            onClick={() => setSelectedAvatar(avatar)}
-                            aria-pressed={selectedAvatar === avatar}
+                            onClick={() => setSelectedAvatar(avatar.emoji)}
+                            aria-pressed={selectedAvatar === avatar.emoji}
+                            aria-label={avatar.label}
                             className={cn(
-                              'rounded-xl border-2 px-3 py-3.5 text-xs font-extrabold tracking-wide transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                              selectedAvatar === avatar
-                                ? 'border-kiddo-blue bg-kiddo-sky/20 text-kiddo-blue'
-                                : 'border-slate-200 bg-white text-kiddo-muted hover:border-slate-300'
+                              'rounded-xl border-2 px-2 py-2.5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                              selectedAvatar === avatar.emoji
+                                ? 'border-kiddo-blue bg-kiddo-sky/20'
+                                : 'border-slate-200 bg-white hover:border-slate-300'
                             )}
                           >
-                            {avatar}
+                            <span className="block text-2xl" aria-hidden>{avatar.emoji}</span>
+                            <span className={cn(
+                              'mt-1 block truncate text-[10px] font-extrabold uppercase tracking-wide',
+                              selectedAvatar === avatar.emoji ? 'text-kiddo-blue' : 'text-kiddo-muted'
+                            )}>
+                              {avatar.label}
+                            </span>
                           </button>
                         ))}
                       </div>
@@ -805,6 +953,86 @@ export function AuthPage({ initialMode = 'login' }: AuthPageProps) {
                   <span className="font-semibold text-kiddo-navy">inside the app</span>.
                 </p>
               )}
+
+              {/* Google signup: ask for the family name AFTER the account is connected */}
+              <Dialog
+                open={familyPromptOpen}
+                onOpenChange={(open) => {
+                  setFamilyPromptOpen(open);
+                  if (!open) setPendingGoogleSignup(null);
+                }}
+              >
+                <DialogContent className="max-w-md rounded-2xl">
+                  <DialogHeader>
+                    <DialogTitle className="text-xl font-extrabold tracking-tight text-kiddo-navy">
+                      One last step
+                    </DialogTitle>
+                    <DialogDescription className="text-[14px] leading-relaxed">
+                      Your Google account is connected. Give your family space a name to finish —
+                      you can change it later in Settings.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  {pendingGoogleSignup ? (
+                    <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                      <GoogleMark className="h-4 w-4 shrink-0" />
+                      <span className="min-w-0 flex-1 truncate text-sm font-semibold text-kiddo-navy">
+                        {pendingGoogleSignup.email || pendingGoogleSignup.displayName}
+                      </span>
+                      <Check className="h-4 w-4 shrink-0 text-kiddo-green" />
+                    </div>
+                  ) : null}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="google-family-name">Family name</Label>
+                    <Input
+                      id="google-family-name"
+                      autoFocus
+                      value={familyDraft}
+                      onChange={(event) => {
+                        setFamilyDraft(event.target.value);
+                        if (familyDraftError) setFamilyDraftError('');
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          void handleGoogleSignupConfirm();
+                        }
+                      }}
+                      placeholder="Family name (e.g., The Johnsons)"
+                      className="h-12"
+                    />
+                    {familyDraftError ? (
+                      <p className="text-[13px] font-semibold text-destructive">{familyDraftError}</p>
+                    ) : null}
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Button
+                      type="button"
+                      size="xl"
+                      className="w-full"
+                      isLoading={loading}
+                      disabled={loading}
+                      onClick={handleGoogleSignupConfirm}
+                    >
+                      {loading ? 'Creating your family...' : 'Create my family'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="w-full"
+                      disabled={loading}
+                      onClick={() => {
+                        setFamilyPromptOpen(false);
+                        setPendingGoogleSignup(null);
+                      }}
+                    >
+                      Not now
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </section>

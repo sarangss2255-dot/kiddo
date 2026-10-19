@@ -4,6 +4,7 @@ import { Card } from '@/src/components/ui/Card';
 import { Badge } from '@/src/components/ui/Badge';
 import { Button } from '@/src/components/ui/Button';
 import { PARENT_APP_APK_URL, PARENT_APP_RELEASE, formatReleaseMeta } from '@/src/lib/site-config';
+import { AppIcon } from '@/src/components/brand/AppIcon';
 import { Reveal } from './Reveal';
 
 const benefits = [
@@ -43,8 +44,8 @@ export function ParentSection() {
               <Card className="relative p-3 border-white shadow-[0_30px_60px_-15px_rgba(27,58,75,0.20)] overflow-hidden">
                 <div className="rounded-xl bg-gradient-to-br from-kiddo-sky/25 to-kiddo-mint/40 aspect-[4/3] flex items-center justify-center">
                   <div className="text-center p-8">
-                    <div className="w-14 h-14 mx-auto rounded-2xl bg-white text-kiddo-blue flex items-center justify-center shadow-sm mb-4">
-                      <TrendingUp className="h-6 w-6" />
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white p-2 shadow-sm">
+                      <AppIcon app="parent" className="h-full w-full" />
                     </div>
                     <p className="text-kiddo-navy text-[15px] font-bold">Parent App</p>
                     <p className="text-kiddo-muted text-[13px] mt-1 font-medium">

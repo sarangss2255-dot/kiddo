@@ -4,9 +4,10 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Star, Flame, Trophy, CheckCircle2, 
   ArrowRight, Sparkles, Zap, Heart,
-  Play, BookOpen, ShoppingBag
+  Play, BookOpen, ShoppingBag, Palette, Pencil
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../../../components/ui/Card';
+import { AvatarCustomizerDialog } from '../../../components/avatar/AvatarCustomizerDialog';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { cn } from '../../../lib/utils';
@@ -16,10 +17,12 @@ export function DashboardChild() {
   const { 
     tasks, completeTask, stars, 
     streak, level, childName, childAvatar, achievements,
+    saveChildProfile,
     wakeUpSettings, wakeUpCompletedToday, lastWakeUpReward, completeWakeUp, isTodaySchoolDay
   } = useKiddoApp();
 
   const [showWakeUpReward, setShowWakeUpReward] = useState(false);
+  const [avatarOpen, setAvatarOpen] = useState(false);
   const [wakeUpResult, setWakeUpResult] = useState<{ points: number; bracket: string } | null>(null);
 
   // Child's missions for today
@@ -51,14 +54,24 @@ export function DashboardChild() {
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center gap-6">
-            <motion.div 
-              initial={{ scale: 0.5, opacity: 0, rotate: -15 }}
-              animate={{ scale: 1, opacity: 1, rotate: 0 }}
-              transition={{ type: "spring", damping: 15 }}
-              className="w-24 h-24 bg-white rounded-[2.5rem] flex items-center justify-center text-6xl shadow-xl border-4 border-white"
+            <button
+              type="button"
+              onClick={() => setAvatarOpen(true)}
+              aria-label="Customize your avatar"
+              className="group relative rounded-[2.5rem] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-orange focus-visible:ring-offset-2"
             >
-              {childAvatar}
-            </motion.div>
+              <motion.div 
+                initial={{ scale: 0.5, opacity: 0, rotate: -15 }}
+                animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                transition={{ type: "spring", damping: 15 }}
+                className="w-24 h-24 bg-white rounded-[2.5rem] flex items-center justify-center text-6xl shadow-xl border-4 border-white transition-transform group-hover:scale-105"
+              >
+                {childAvatar}
+              </motion.div>
+              <span className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-brand-orange text-white shadow-lg ring-2 ring-white">
+                <Pencil size={14} />
+              </span>
+            </button>
             <div className="space-y-1">
               <motion.h1 
                 initial={{ opacity: 0, x: -20 }}
@@ -75,6 +88,17 @@ export function DashboardChild() {
               >
                 Ready for today's adventures?
               </motion.p>
+              <motion.button
+                type="button"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.15 }}
+                onClick={() => setAvatarOpen(true)}
+                className="mt-1 inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-brand-orange hover:text-brand-navy transition-colors"
+              >
+                <Palette size={14} />
+                Customize avatar
+              </motion.button>
             </div>
           </div>
           
@@ -431,6 +455,12 @@ export function DashboardChild() {
         </div>
       </section>
 
+      <AvatarCustomizerDialog
+        open={avatarOpen}
+        onOpenChange={setAvatarOpen}
+        current={childAvatar}
+        onSave={(avatar) => saveChildProfile({ avatar })}
+      />
     </div>
   );
 }

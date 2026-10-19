@@ -5,15 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Input } from '../../../components/ui/Input';
-import { api } from '../../../api';
+import { AvatarGrid } from '../../../components/avatar/AvatarGrid';
 import { cn } from '../../../lib/utils';
 
 export function SettingsSection() {
   const {
-    role,
-    childId,
     childName,
     childAvatar,
+    saveChildProfile,
     addNotification,
     resetData,
     wakeUpSettings,
@@ -39,22 +38,11 @@ export function SettingsSection() {
   const [pushStreakAlerts, setPushStreakAlerts] = useState(true);
   const [currentTheme, setCurrentTheme] = useState<'cozy' | 'mint'>('cozy');
 
-  const avatars = ['🦊', '🐱', '🐼', '🦁', '🦄', '🐨', '🦖', '🐝'];
-
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingProfile(true);
     try {
-      // Parents save the child profile through the API; the explorer preview
-      // mode keeps the change local only.
-      if (role === 'parent' && childId) {
-        await api.patch(`/auth/children/${childId}`, {
-          firstName: cName.trim(),
-          avatar: cAvatar,
-        });
-      }
-      localStorage.setItem('kiddo_onboarding_child_name', cName.trim());
-      localStorage.setItem('kiddo_onboarding_child_avatar', cAvatar);
+      await saveChildProfile({ name: cName.trim(), avatar: cAvatar });
       localStorage.setItem('kiddo_onboarding_child_age', cAge);
       addNotification('Profile saved', 'Your explorer profile was updated.');
     } catch (err: any) {
@@ -118,23 +106,7 @@ export function SettingsSection() {
 
               <div className="space-y-3">
                 <label className="text-[10px] font-black uppercase tracking-widest text-brand-muted ml-1">Select Avatar</label>
-                <div className="grid grid-cols-4 sm:grid-cols-8 gap-3">
-                  {avatars.map((av) => (
-                    <button
-                      key={av}
-                      type="button"
-                      onClick={() => setCAvatar(av)}
-                      className={cn(
-                        "text-2xl py-3 rounded-2xl border-2 transition-all",
-                        cAvatar === av 
-                          ? "border-brand-orange bg-brand-orange/10 scale-105 shadow-sm" 
-                          : "border-brand-navy/5 bg-white hover:border-brand-navy/10"
-                      )}
-                    >
-                      {av}
-                    </button>
-                  ))}
-                </div>
+                <AvatarGrid value={cAvatar} onChange={setCAvatar} />
               </div>
 
               <Button

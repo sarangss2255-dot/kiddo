@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { KeyRound, Menu, Search, ShieldCheck } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import { BrandLogo } from "@/src/components/brand/BrandLogo";
 import { useDocs } from "./docs-context";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -61,11 +62,7 @@ export function DocsHeader({ onOpenNav }: { onOpenNav: () => void }) {
 
         <Link href="/docs" className="flex shrink-0 items-center gap-2.5">
           <span className="grid h-9 w-9 place-items-center overflow-hidden rounded-lg border border-docs-green/40 bg-docs-green/10">
-            <img
-              src="/kiddo-logo-64.png"
-              alt="KidDo"
-              className="h-full w-full object-cover"
-            />
+            <BrandLogo variant="mark" className="h-full w-full object-cover" />
           </span>
           <span className="hidden flex-col leading-tight sm:flex">
             <span className="text-[15px] font-bold text-docs-text">

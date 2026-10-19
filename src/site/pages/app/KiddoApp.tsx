@@ -18,7 +18,9 @@ import { cn } from '../../../lib/utils';
 import { Button } from '../../../components/ui/Button';
 import { Card } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
+import { BrandLogo } from '../../../components/brand/BrandLogo';
 import { AUTH_STORAGE_KEYS } from '../../../lib/auth-session';
+import { resolveAvatar } from '../../../lib/avatars';
 import { api } from '../../../api';
 
 // Types
@@ -73,6 +75,8 @@ export interface AppContextType {
   childId: string | null;
   childName: string;
   childAvatar: string;
+  /** Persist name/avatar for the selected child (self-service for kids, API for parents). */
+  saveChildProfile: (updates: { name?: string; avatar?: string }) => Promise<void>;
   achievements: Achievement[];
   notifications: any[];
   addNotification: (title: string, message: string) => void;
@@ -224,8 +228,12 @@ export function KiddoApp() {
   const [parentEmail, setParentEmail] = useState('');
 
   // Child profile (loaded from the API / onboarding cache — never a fake name).
-  const childName = localStorage.getItem('kiddo_onboarding_child_name') || 'Your child';
-  const childAvatar = localStorage.getItem('kiddo_onboarding_child_avatar') || '🦊';
+  const [childName, setChildName] = useState(
+    () => localStorage.getItem('kiddo_onboarding_child_name') || 'Your child',
+  );
+  const [childAvatar, setChildAvatar] = useState(
+    () => resolveAvatar(localStorage.getItem('kiddo_onboarding_child_avatar')),
+  );
 
   const daysOfWeek: (keyof WeeklySchedule)[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const todayName = daysOfWeek[new Date().getDay()];
@@ -251,6 +259,19 @@ export function KiddoApp() {
           .trim();
         setParentName(fullName || String(profile.firstName ?? 'Parent'));
         setParentEmail(String(profile.email ?? ''));
+
+        if (profile.role === 'child') {
+          if (profile.firstName) {
+            const firstName = String(profile.firstName);
+            setChildName(firstName);
+            localStorage.setItem('kiddo_onboarding_child_name', firstName);
+          }
+          if (profile.avatar) {
+            const avatar = resolveAvatar(String(profile.avatar));
+            setChildAvatar(avatar);
+            localStorage.setItem('kiddo_onboarding_child_avatar', avatar);
+          }
+        }
       }
       setTasks(Array.isArray(taskList) ? taskList.map(mapApiTask) : []);
       setRewards(Array.isArray(rewardList) ? rewardList.map(mapApiReward) : []);
@@ -263,7 +284,14 @@ export function KiddoApp() {
         if (children[0]) {
           setChildId(String(children[0]._id));
           if (children[0].firstName) {
-            localStorage.setItem('kiddo_onboarding_child_name', String(children[0].firstName));
+            const firstName = String(children[0].firstName);
+            setChildName(firstName);
+            localStorage.setItem('kiddo_onboarding_child_name', firstName);
+          }
+          if (children[0].avatar) {
+            const avatar = resolveAvatar(String(children[0].avatar));
+            setChildAvatar(avatar);
+            localStorage.setItem('kiddo_onboarding_child_avatar', avatar);
           }
         }
       } else if (profile?._id) {
@@ -358,6 +386,30 @@ export function KiddoApp() {
     setRoleState(newRole);
     localStorage.setItem(AUTH_STORAGE_KEYS.role, newRole);
     router.push(`/app/${newRole}`);
+  };
+
+  /**
+   * Kids update their own profile through /users/me; parents update the
+   * selected child through the family endpoint. Both paths keep local state
+   * and the onboarding cache in sync so the avatar changes immediately.
+   */
+  const saveChildProfile = async (updates: { name?: string; avatar?: string }) => {
+    const nextName = updates.name?.trim() || childName;
+    const nextAvatar = updates.avatar || childAvatar;
+
+    if (role === 'child') {
+      await api.patch('/users/me', { firstName: nextName, avatar: nextAvatar });
+    } else if (childId) {
+      await api.patch(`/auth/children/${childId}`, {
+        firstName: nextName,
+        avatar: nextAvatar,
+      });
+    }
+
+    setChildName(nextName);
+    setChildAvatar(nextAvatar);
+    localStorage.setItem('kiddo_onboarding_child_name', nextName);
+    localStorage.setItem('kiddo_onboarding_child_avatar', nextAvatar);
   };
 
   const addTask = async (task: Omit<Task, 'id' | 'status'>) => {
@@ -574,7 +626,7 @@ export function KiddoApp() {
       role, setRole, tasks, addTask, completeTask, approveTask, rejectTask,
       rewards, claimReward, approveRewardClaim, stars, addStars, subtractStars,
       streak, level, parentName, parentEmail, childId, childName, childAvatar,
-      achievements, notifications, addNotification, resetData,
+      saveChildProfile, achievements, notifications, addNotification, resetData,
       weeklySchedule, setWeeklySchedule, updateScheduleDay,
       wakeUpSettings, setWakeUpTargetTime,
       wakeUpCompletedToday, lastWakeUpReward, completeWakeUp, liveError,
@@ -603,7 +655,7 @@ export function KiddoApp() {
             {/* Brand Header */}
             <div className="flex items-center gap-4 mb-12">
               <div className="w-10 h-10 rounded-2xl bg-white shadow-sm border border-brand-navy/5 flex items-center justify-center overflow-hidden">
-                <img src="/kiddo-logo.png" alt="Logo" className="w-full h-full object-cover" />
+                <BrandLogo variant="mark" className="w-full h-full object-cover" />
               </div>
               <div>
                 <span className="font-kids font-bold text-xl block leading-tight">KidDo</span>

@@ -13,6 +13,7 @@ import {
   SheetTitle,
 } from '../../components/ui/Sheet';
 import { cn } from '../../lib/utils';
+import { BrandLogo } from '../../components/brand/BrandLogo';
 import { brandContent } from '../common/content';
 import { adminNavSections } from '../common/navigation';
 import { dispatchAdminRefresh } from '../common/useAdminRefresh';
@@ -32,7 +33,7 @@ function SidebarContent({ pathname, userName, initials, onNavigate, onLogout }: 
       {/* Brand Header */}
       <div className="flex items-center gap-3 px-2 pt-1">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-kiddo-navy/10 bg-white shadow-sm">
-          <img src="/kiddo-logo.png" alt="KidDo" className="h-full w-full object-cover" />
+          <BrandLogo variant="mark" className="h-full w-full object-cover" />
         </div>
         <div className="min-w-0">
           <span className="block font-display text-lg font-bold leading-tight text-kiddo-navy">

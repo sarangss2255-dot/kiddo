@@ -1,5 +1,6 @@
 import React from 'react';
 import { SITE_HOST, SITE_NAME } from '@/src/lib/site-config';
+import { BrandLogo } from '@/src/components/brand/BrandLogo';
 
 const footerLinks = {
   Product: [
@@ -27,7 +28,7 @@ export function Footer() {
         <div className="grid md:grid-cols-4 gap-10 md:gap-8">
           <div className="md:col-span-1">
             <div className="flex items-center gap-2.5 mb-4">
-              <img src="/kiddo-logo-64.png" alt={SITE_NAME} className="h-9 w-9 rounded-xl" />
+              <BrandLogo variant="mark" className="h-9 w-9 rounded-xl ring-1 ring-white/20" />
               <span className="text-[22px] font-extrabold text-white">{SITE_NAME}</span>
             </div>
             <p className="text-[15px] leading-relaxed text-white/60">

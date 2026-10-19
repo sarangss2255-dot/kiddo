@@ -9,6 +9,7 @@ import { Label } from '../../components/ui/Label';
 import { Separator } from '../../components/ui/Separator';
 import { Alert, AlertDescription } from '../../components/ui/Alert';
 import { Badge } from '../../components/ui/Badge';
+import { BrandLogo } from '../../components/brand/BrandLogo';
 import { useAuth } from '../context/AuthContext';
 
 export function LoginPage() {
@@ -63,11 +64,8 @@ export function LoginPage() {
         <Card className="border border-slate-100 rounded-3xl shadow-xl shadow-kiddo-navy/5 bg-white overflow-hidden">
           <CardContent className="p-8 md:p-10">
             <div className="flex flex-col items-center text-center mb-8">
-              <div className="w-16 h-16 rounded-3xl bg-white shadow-sm border border-kiddo-navy/10 flex items-center justify-center overflow-hidden mb-5">
-                <img src="/kiddo-logo.png" alt="KidDo Logo" className="w-full h-full object-cover" />
-              </div>
-              <span className="font-display font-bold text-2xl block leading-tight">KidDo</span>
-              <Badge variant="accent" className="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest mt-1.5">
+              <BrandLogo className="mb-5 h-12" />
+              <Badge variant="accent" className="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest">
                 Admin Workspace
               </Badge>
               <h1 className="text-xl font-extrabold text-slate-800 mt-6">Sign in to the Admin Workspace</h1>
