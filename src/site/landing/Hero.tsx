@@ -10,6 +10,7 @@ import {
   useSpring,
 } from 'motion/react';
 import { PhoneDashboard } from './PhoneDashboard';
+import { ParticleField } from './ParticleField';
 import { Download, Play, Heart, Trophy, TrendingUp } from 'lucide-react';
 import { Badge } from '@/src/components/ui/Badge';
 import { Button } from '@/src/components/ui/Button';
@@ -77,6 +78,9 @@ export function Hero() {
 
   return (
     <section className="relative pt-28 md:pt-36 pb-12 md:pb-16 overflow-hidden bg-kiddo-warm">
+      {/* Interactive particle backdrop */}
+      <ParticleField className="absolute inset-0" variant="light" />
+
       {/* Subtle brand glows */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-24 right-[8%] w-[520px] h-[520px] rounded-full opacity-[0.13] bg-kiddo-blue blur-[110px] animate-drift" />

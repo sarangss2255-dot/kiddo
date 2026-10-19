@@ -2,10 +2,14 @@ import React from 'react';
 import Link from 'next/link';
 import { Download, ArrowUpRight } from 'lucide-react';
 import { Button } from '@/src/components/ui/Button';
+import { ParticleField } from './ParticleField';
 
 export function FinalCTA() {
   return (
     <section id="download" className="py-20 md:py-28 bg-kiddo-navy text-white relative overflow-hidden">
+      {/* Interactive particle backdrop */}
+      <ParticleField className="absolute inset-0" variant="dark" count={38} />
+
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-32 right-[15%] w-[420px] h-[420px] rounded-full opacity-15 bg-kiddo-blue blur-[100px]" />
         <div className="absolute bottom-[-20%] left-[10%] w-[380px] h-[380px] rounded-full opacity-10 bg-kiddo-orange blur-[100px]" />

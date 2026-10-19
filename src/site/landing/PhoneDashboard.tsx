@@ -178,9 +178,18 @@ function RewardCard({ reward }: { reward: typeof rewards[0] }) {
   );
 }
 
-export function PhoneDashboard({ variant = 'full' }: { variant?: 'full' | 'screen' }) {
+export type ScrollTarget = 'start' | 'middle' | 'end';
+
+export function PhoneDashboard({
+  variant = 'full',
+  scrollTo = 'start',
+}: {
+  variant?: 'full' | 'screen';
+  /** Which part of the simulated app the screen should show. */
+  scrollTo?: ScrollTarget;
+}) {
   if (variant === 'screen') {
-    return <DashboardScreen />;
+    return <DashboardScreen scrollTo={scrollTo} />;
   }
 
   return (
@@ -208,7 +217,27 @@ export function PhoneDashboard({ variant = 'full' }: { variant?: 'full' | 'scree
   );
 }
 
-function DashboardScreen() {
+function DashboardScreen({ scrollTo = 'start' }: { scrollTo?: ScrollTarget }) {
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+
+  // Scroll the simulated screen to the requested section so preview phones show
+  // different parts of the app while staying fully filled (no blank gaps).
+  React.useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const apply = () => {
+      const max = el.scrollHeight - el.clientHeight;
+      if (max <= 0) return;
+      el.scrollTop = scrollTo === 'end' ? max : scrollTo === 'middle' ? max / 2 : 0;
+    };
+
+    apply();
+    // Content height can settle after animations/fonts load — re-apply once.
+    const timer = window.setTimeout(apply, 450);
+    return () => window.clearTimeout(timer);
+  }, [scrollTo]);
+
   return (
     <div
       className="relative overflow-hidden rounded-[34px]"
@@ -226,7 +255,7 @@ function DashboardScreen() {
           <div className="h-8 w-full" />
 
           {/* Scrollable content */}
-          <div className="h-[calc(100%-2rem-4.5rem)] overflow-y-auto px-4 pb-6 scrollbar-hide">
+          <div ref={scrollRef} className="h-[calc(100%-2rem-4.5rem)] overflow-y-auto px-4 pb-6 scrollbar-hide">
             {/* Header */}
             <div className="flex items-center gap-3 pt-3">
               <div

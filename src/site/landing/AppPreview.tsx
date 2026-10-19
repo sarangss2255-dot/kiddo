@@ -1,22 +1,22 @@
 import React from 'react';
-import { PhoneDashboard } from './PhoneDashboard';
+import { PhoneDashboard, type ScrollTarget } from './PhoneDashboard';
 import { Reveal } from './Reveal';
 
-const previews = [
+const previews: { label: string; sub: string; scrollTo: ScrollTarget }[] = [
   {
     label: 'Child Dashboard',
-    sub: 'Today\'s missions at a glance',
-    offset: '0%',
+    sub: "Today's missions at a glance",
+    scrollTo: 'start',
   },
   {
     label: 'Tasks & Rewards',
     sub: 'Complete, earn, and shop',
-    offset: '-34%',
+    scrollTo: 'middle',
   },
   {
     label: 'Progress & Growth',
     sub: 'Streaks, levels and habits',
-    offset: '-64%',
+    scrollTo: 'end',
   },
 ];
 
@@ -35,7 +35,7 @@ export function AppPreview() {
           </div>
         </Reveal>
 
-        <div className="grid grid-cols-3 gap-4 md:gap-8 items-start">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-3 sm:gap-4 md:gap-8 items-start">
           {previews.map((preview, index) => (
             <Reveal key={preview.label} delay={index * 0.1}>
               <div className="text-center">
@@ -43,11 +43,9 @@ export function AppPreview() {
                 <div className="mx-auto w-[92%] max-w-[250px] rounded-[36px] p-[7px] shadow-[0_30px_60px_-15px_rgba(27,58,75,0.25)]"
                   style={{ background: 'linear-gradient(145deg, #3a3a3a, #111)' }}
                 >
-                  <div className="relative overflow-hidden rounded-[30px] aspect-[9/19.5]">
-                    {/* Simulated scroll: show a section of the real dashboard */}
-                    <div className="absolute left-0 right-0" style={{ transform: `translateY(${preview.offset})` }}>
-                      <PhoneDashboard variant="screen" />
-                    </div>
+                  <div className="relative aspect-[9/19.5] overflow-hidden rounded-[30px]">
+                    {/* Real child dashboard, scrolled to the matching section */}
+                    <PhoneDashboard variant="screen" scrollTo={preview.scrollTo} />
                   </div>
                 </div>
                 <p className="mt-4 text-[15px] font-bold text-kiddo-navy">{preview.label}</p>
