@@ -632,26 +632,24 @@ export function KiddoApp() {
       wakeUpCompletedToday, lastWakeUpReward, completeWakeUp, liveError,
       isTodaySchoolDay
     }}>
-      <div className="flex min-h-screen bg-brand-bg text-brand-navy font-sans antialiased overflow-hidden">
-        
-        {/* MOBILE SIDEBAR TRIGGER */}
-        <div className="md:hidden fixed top-6 left-6 z-50">
-          <Button 
-            variant="outline"
-            size="sm"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="w-12 h-12 p-0 rounded-2xl bg-white border-brand-navy/5 shadow-xl"
-          >
-            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-          </Button>
-        </div>
+      <div className="min-h-[100svh] bg-slate-100/80 text-brand-navy font-sans antialiased md:flex md:items-center md:justify-center md:p-4 xl:p-6">
+        <div className="relative flex h-[100svh] w-full flex-col overflow-hidden bg-brand-bg md:h-auto md:max-h-[calc(100svh-2rem)] md:max-w-[1600px] md:flex-row md:aspect-video md:rounded-[2rem] md:border md:border-white/70 md:shadow-[0_30px_90px_-30px_rgba(15,23,42,0.45)] xl:max-h-[calc(100svh-3rem)]">
+        {/* MOBILE SIDEBAR OVERLAY */}
+        {sidebarOpen && (
+          <button
+            type="button"
+            aria-label="Close navigation"
+            onClick={() => setSidebarOpen(false)}
+            className="fixed inset-0 z-30 bg-slate-900/40 backdrop-blur-[2px] md:hidden"
+          />
+        )}
 
         {/* SIDEBAR NAVIGATION */}
         <aside className={cn(
-          "fixed md:sticky top-0 bottom-0 left-0 z-40 w-72 bg-white border-r border-brand-navy/5 transition-all duration-300 ease-in-out",
+          "fixed inset-y-0 left-0 z-40 flex w-[min(18rem,85vw)] flex-col border-r border-border bg-card transition-transform duration-300 ease-out md:relative md:inset-auto md:z-0 md:w-72 md:translate-x-0 md:shrink-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}>
-          <div className="h-full flex flex-col p-8">
+          <div className="flex h-full flex-col overflow-y-auto p-5 sm:p-6 md:p-8">
             {/* Brand Header */}
             <div className="flex items-center gap-4 mb-12">
               <div className="w-10 h-10 rounded-2xl bg-white shadow-sm border border-brand-navy/5 flex items-center justify-center overflow-hidden">
@@ -758,18 +756,32 @@ export function KiddoApp() {
         </aside>
 
         {/* MAIN WORKSPACE */}
-        <main className="flex-1 flex flex-col min-w-0 relative">
+        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col">
           
           {/* Top Bar */}
-          <header className="h-20 bg-white/80 backdrop-blur-md border-b border-brand-navy/5 flex items-center justify-between px-8 md:px-12 sticky top-0 z-30">
-            <div>
-              <h2 className="text-xl md:text-2xl">
-                Workspace
-              </h2>
+          <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-border bg-background/80 px-4 backdrop-blur-md sm:px-6 md:h-20 md:px-10">
+            <div className="flex min-w-0 items-center gap-3">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setSidebarOpen((open) => !open)}
+                className="h-10 w-10 rounded-xl md:hidden"
+                aria-label={sidebarOpen ? 'Close navigation' : 'Open navigation'}
+              >
+                {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+              </Button>
+              <div className="min-w-0">
+                <h2 className="truncate text-lg font-bold md:text-2xl">
+                  Workspace
+                </h2>
+                <p className="hidden text-xs font-medium text-muted-foreground sm:block">
+                  Your family command center
+                </p>
+              </div>
             </div>
             
-            <div className="flex items-center gap-6">
-              <div className="hidden md:flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="hidden items-center gap-3 lg:flex">
                 <Badge variant="success" className="px-3 py-1 bg-brand-mint/5 normal-case tracking-normal font-bold">
                   <span className="w-2 h-2 rounded-full bg-brand-mint animate-pulse mr-2 inline-block" />
                   Family Sync Live
@@ -780,8 +792,9 @@ export function KiddoApp() {
                 variant="ghost" 
                 size="sm" 
                 onClick={resetData}
-                className="w-10 h-10 p-0 rounded-xl hover:bg-brand-bg text-brand-muted"
-                title="Reset simulation data"
+                className="h-10 w-10 rounded-xl p-0 text-brand-muted hover:bg-brand-bg"
+                title="Refresh family data"
+                aria-label="Refresh family data"
               >
                 <RefreshCw size={18} />
               </Button>
@@ -789,8 +802,8 @@ export function KiddoApp() {
           </header>
 
           {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto p-8 md:p-12">
-            <div className="max-w-6xl mx-auto w-full">
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="mx-auto w-full max-w-[1200px] p-4 pb-10 sm:p-6 md:p-8 lg:p-10">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={pathname}
@@ -880,6 +893,7 @@ export function KiddoApp() {
           )}
         </AnimatePresence>
 
+        </div>
       </div>
     </AppContext.Provider>
   );

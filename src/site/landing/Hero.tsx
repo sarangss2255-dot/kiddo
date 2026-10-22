@@ -77,7 +77,7 @@ export function Hero() {
   };
 
   return (
-    <section className="relative pt-28 md:pt-36 pb-12 md:pb-16 overflow-hidden bg-kiddo-warm">
+    <section className="relative flex min-h-[calc(100svh-4rem)] items-center overflow-hidden bg-kiddo-warm pb-16 pt-24 md:min-h-[calc(100svh-4.25rem)] md:pb-20 md:pt-28">
       {/* Interactive particle backdrop */}
       <ParticleField className="absolute inset-0" variant="light" />
 
