@@ -53,7 +53,7 @@
 ### Configuration
 - `next.config.ts`: env-driven rewrites (`API_PROXY_TARGET`), `turbopack.root`
 - `.env.development`, `.env.production`, `.env.example`: all API URLs env-driven
-- `netlify.toml`: updated for Next.js (`@netlify/plugin-nextjs`)
+- `vercel.json`: Vercel Next.js preset, `npm ci` install, `npm run build`, Mumbai (`bom1`) region
 - `postcss.config.mjs`: `@tailwindcss/postcss`
 - `eslint.config.mjs`: flat config
 - `vitest.config.ts`: updated for Next.js

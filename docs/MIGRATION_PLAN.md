@@ -20,7 +20,7 @@ Status: approved and in progress.
 | UI kit | Local shadcn-style components in `src/components/ui` (Radix + CVA + Tailwind 4) |
 | Styling | Tailwind CSS 4 via `@tailwindcss/vite`, KidDo tokens in `src/index.css` |
 | Env vars | `VITE_API_URL` (`.env.production`), `GEMINI_API_KEY` (Vite define) |
-| Build/deploy | `vite build` → `dist/`, Netlify (`netlify.toml`), `_redirects` SPA fallback |
+| Build/deploy | `vite build` → `dist/`, Vercel (`vercel.json`), Vercel Git integration |
 | Tests | Vitest + Testing Library (`src/test/landing.test.tsx`) |
 
 ## 2. Target architecture
